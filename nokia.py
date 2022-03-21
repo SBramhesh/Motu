@@ -28,14 +28,22 @@ name, authentication_status = authenticator.login('Nokia Login', 'main')
 
 if authentication_status:
     st.sidebar.write('Logged in as *%s*' % (name))
-    PAGES = {
+    PAGES_ADMIN = {
         "Upload  New File (RTWP + VSWR)": streamapp,
         # "Files Processed (Raw Data + Summary)": fireStoreapp,
         "Process AT&T Log Files (RSSI)": attLogs,
         "5G Nokia Scripting": nrcell_replace,
         "Upload XML template": aloha_dict,
     }
+    PAGES = {
+        "Upload  New File (RTWP + VSWR)": streamapp,
+        # "Files Processed (Raw Data + Summary)": fireStoreapp,
+        "Process AT&T Log Files (RSSI)": attLogs,
+        "5G Nokia Scripting": nrcell_replace,
+    }
     st.sidebar.title('Nokia Main Menu')
+    if name == 'Integer User':
+        PAGES = PAGES_ADMIN
     selection = st.sidebar.radio(
         f"Navigate to:", list(PAGES.keys()))
     page = PAGES[selection]

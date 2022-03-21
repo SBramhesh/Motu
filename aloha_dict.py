@@ -1,5 +1,6 @@
 from github import Github
 import json
+import datetime
 import streamlit as st
 xml_dict = {}
 
@@ -18,11 +19,14 @@ xml_dict['3AHLOA(shared)_15BW+3AEHC (shared)_100BW_NoAHFIG'] = '<?xml version="1
 
 def commit_file():
 
-    g = Github("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")
+    g = Github("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")
     # g = Github(user, password)
     user = g.get_user()
 
+    st.sidebar.write(f"logged in as ..{str(user)}")
+
     repo_name = 'test'
+    current_time = datetime.datetime.now()
 
     # Check if repo non existant
     if repo_name not in [r.name for r in user.get_repos()]:
@@ -33,13 +37,12 @@ def commit_file():
     repo = user.get_repo(repo_name)
 
     # File details
-    file_name = 'aloha_dict.py'
+    file_name = f'aloha_dict{current_time}.py'
     file_content = json.dumps(xml_dict)
     # file = repo.get_file_contents(file_name)
 
     # Create file
-    repo.update_file(file_name, 'commit', file_content,
-                     'aae87dc56c85ff2d3293315822fce126ba5d025d')
+    repo.create_file(file_name, 'commit{current_time}', file_content)
 
 
 def return_dict():

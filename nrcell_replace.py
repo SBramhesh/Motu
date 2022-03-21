@@ -183,13 +183,13 @@ def app():
                     """
             st.markdown(hide_st_style, unsafe_allow_html=True)
 
-            option = st.selectbox(
-                'FDD EQM Options',
-                ('3AHLOA(shared)_15BW+3AEHC (shared)_100BW_NoAHFIG', '3AHLOA(shared)_20BW+3AEHC (shared)_100BW_NoAHFIG', '3AHLOA(shared)_15BW+3AHFIG(shared)+3AEHC (shared)_20BW', '3AHLOA(shared)_15BW+3AHFIG(shared)+3AEHC (shared)_60BW', '3AHLOA(shared)_15BW+3AHFIG(shared)+3AEHC (shared)_100BW',
-                 '3AHLOA(shared)_20BW+3AHFIG (shared)_NoAEHC', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_20BW', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_40BW', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_60BW', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_100BW'))
+            # option = st.selectbox(
+            # 'FDD EQM Options',
+            # ('3AHLOA(shared)_15BW+3AEHC (shared)_100BW_NoAHFIG', '3AHLOA(shared)_20BW+3AEHC (shared)_100BW_NoAHFIG', '3AHLOA(shared)_15BW+3AHFIG(shared)+3AEHC (shared)_20BW', '3AHLOA(shared)_15BW+3AHFIG(shared)+3AEHC (shared)_60BW', '3AHLOA(shared)_15BW+3AHFIG(shared)+3AEHC (shared)_100BW',
+            #  '3AHLOA(shared)_20BW+3AHFIG (shared)_NoAEHC', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_20BW', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_40BW', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_60BW', '3AHLOA(shared)_20BW+3AHFIG(shared)+3AEHC (shared)_100BW'))
 
-            print('You selected:', option)
-            print(list(xml_dict.keys()))
+            xml_list = list(xml_dict.keys())
+            option = st.selectbox('FDD EQM Options', xml_list)
             print(
                 len(xml_dict["3AHLOA(shared)_20BW+3AEHC (shared)_100BW_NoAHFIG"]))
             xml_str = str(xml_dict[option]).replace('\n', '')
@@ -666,7 +666,7 @@ def app():
             dict_res = {}
             for k, v in enumerate(res):
                 dict_res[k] = v
-            print(f"physCell dict is..{dict_res}")
+            st.sidebar.write(f"physCell dict is..{dict_res}")
 
             print('---')
             print(dict.get(1))
@@ -763,7 +763,7 @@ def app():
                             f"the  mf value is.. {str(mf_val).lstrip().rstrip()}")
                         mf_tag.string = str(mf_val).lstrip().rstrip()
         #           name="trackingAreaDN"
-                    elif mf_tag.parent['class'].find('NRPLMNSET_SA') > -1:
+                    elif mf_tag.parent['class'].find('NRPLMNSET_SA') > -1 and mf_tag.parent['class'].find('_NRPLMNSET_SA') == -1:
                         cell_value = re.findall(
                             r'NRCELL-[0-9]+', mf_tag.parent['distName'])[-1].split('-')[1]
                         print(f"cell value is..{cell_value}")

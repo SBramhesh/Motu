@@ -617,6 +617,7 @@ def app():
             # print(mode_set)
         #     mode_list = mode_set.to_list()
             # print(len(mode_list))
+            print(dict)
             return dict
 
         def get_band_dict():
@@ -666,7 +667,7 @@ def app():
             dict_res = {}
             for k, v in enumerate(res):
                 dict_res[k] = v
-            st.sidebar.write(f"physCell dict is..{dict_res}")
+            print(f"physCell dict is..{dict_res}")
 
             print('---')
             print(dict.get(1))

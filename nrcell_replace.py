@@ -190,8 +190,8 @@ def app():
 
             xml_list = list(xml_dict.keys())
             option = st.selectbox('FDD EQM Options', xml_list)
-            print(
-                len(xml_dict["3AHLOA(shared)_20BW+3AEHC (shared)_100BW_NoAHFIG"]))
+            # print(
+            # len(xml_dict["3AHLOA(shared)_20BW+3AEHC (shared)_100BW_NoAHFIG"]))
             xml_str = str(xml_dict[option]).replace('\n', '')
 
             if uploaded_file_tnd_ciq is not None:
@@ -653,6 +653,7 @@ def app():
             # print(mode_set)
         #     mode_list = mode_set.to_list()
             # print(len(mode_list))
+            st.sidebar.write(dict)
             return dict
 
         def get_physcell_dict(parName):
@@ -900,6 +901,7 @@ def app():
             'location': 'moduleLocation',
             'btsName': 'btsName',
             'radioMasterDN': 'mrBtsId',
+            'moduleLocation': 'btsName',
             # 'secondEndpointDN': 'mrBtsId',
             # 'firstEndpointDN': 'mrBtsId',
         }

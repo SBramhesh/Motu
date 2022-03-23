@@ -565,11 +565,18 @@ def app():
             #     txt.replaceWith(newtext)
             for bts_tag in bts_tags:
                 if str(bts_tag.parent['class']).find('RMOD') > -1:
-                    print(f"Modifying {attr_name}..")
+                    print(
+                        f"Modifying {attr_name}.. with ciq parameter ..{mrbts_par}")
                     print(f"printing text..{str(bts_tag.text)}")
                     print(str(get_mrbts_value(mrbts_par)))
-                    bts_tag.string = replace_mrbts_id(
-                        str(bts_tag.text), str(get_mrbts_value(mrbts_par)))
+                    ''' radioMasterDN has shebang of NRBTS MRBTS ids. moduleLocation is 
+                    simple string substitution'''
+                    if str(attr_name).find('radio') > -1:
+                        bts_tag.string = replace_mrbts_id(
+                            str(bts_tag.text), str(get_mrbts_value(mrbts_par)))
+                    else:
+                        bts_tag.string = str(get_mrbts_value(
+                            mrbts_par)).lstrip().rstrip()
                     # Also replace all MRBTS ids in managedObjects
                     tagz = soup.find_all('managedObject')
                     for tag in tagz:
@@ -653,7 +660,7 @@ def app():
             # print(mode_set)
         #     mode_list = mode_set.to_list()
             # print(len(mode_list))
-            st.sidebar.write(dict)
+            print(dict)
             return dict
 
         def get_physcell_dict(parName):

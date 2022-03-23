@@ -4,7 +4,9 @@ import pickle
 import numpy as np
 import json
 import datetime
+from io import StringIO
 import streamlit as st
+import os
 from os.path import exists
 
 
@@ -26,12 +28,12 @@ xml_dict['3AHLOA(shared)_15BW+3AEHC (shared)_100BW_NoAHFIG'] = '<?xml version="1
 
 def commit_file():
 
-    g = Github("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")
+    g = Github("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")
     # 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
     # g = Github(user, password)
     user = g.get_user()
 
-    # st.sidebar.write(f"logged in as ..{str(user)}")
+    # print(f"logged in as ..{str(user)}")
 
     repo_name = 'test'
     current_time = datetime.datetime.now()
@@ -45,8 +47,8 @@ def commit_file():
     repo = user.get_repo(repo_name)
 
     # File details
-    file_name = f'aloha_dict{current_time}.py'
-    file_content = json.dumps(xml_dict)
+    file_name = f'aloha_dict{current_time}.xml'
+    file_content = str(xml_dict)
     # file = repo.get_file_contents(file_name)
 
     # Create file
@@ -54,7 +56,14 @@ def commit_file():
 
 
 def return_dict():
-    for key in xml_dict.keys():
+
+    xml_files = []
+
+    for x in os.listdir():
+        if x.endswith(".xml"):
+            xml_files.append(str(x)[:-4])
+
+    for key in xml_files:
         if exists(f"{str(key)}.xml"):
             with open(f"{str(key)}.xml", "r", encoding='utf-8') as file:
                 soup = BeautifulSoup(file, "xml")
@@ -90,20 +99,30 @@ def app():
 
             if uploaded_file_template is not None:
                 uploadedfn = uploaded_file_template.name
+                template_soup = BeautifulSoup(
+                    uploaded_file_template, 'xml')
 
-                # To read file as bytes:
-                bytes_data = uploaded_file_template.getvalue()
             submitted = st.form_submit_button("Upload template")
             if submitted:
-                commit_file()
+                with st.spinner('Please Kindly Wait...'):
+                    # commit_file()
+                    if uploaded_file_template is not None:
+                        uploadedfn = uploaded_file_template.name
+                        print(type(uploaded_file_template))
 
-                xml_dict[str(uploadedfn)] = uploaded_file_template
-                for key, value in xml_dict.items():
-                    st.sidebar.write(key)
-                    soup = BeautifulSoup(str(value), "xml")
-                    with open(f"{str(key)}.xml", "w", encoding='utf-8') as file:
-                        # prettify the soup object and convert it into a string
-                        file.write(str(soup))
+                        # To convert to a string based IO:
+                        stringio = StringIO(
+                            uploaded_file_template.getvalue().decode("utf-8"))
+                        # print(stringio.read())
+
+                    xml_dict[str(uploadedfn)[:-4]] = str(stringio.read())
+                    for key, value in xml_dict.items():
+                        print(key)
+                        soup = BeautifulSoup(str(value), "xml")
+                        with open(f"{str(key)}.xml", "w", encoding='utf-8') as file:
+                            # prettify the soup object and convert it into a string
+                            file.write(str(soup))
+                    st.success('File successfully uploaded :fire:!!')
 
 
 app()

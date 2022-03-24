@@ -496,10 +496,13 @@ def process_vswr(uploaded_vswr_file):
 
         limitdb = np.around(np.around(st.session_state.vswr, 2), 2) - 0.01
         cleanrxlist = [x for x in rxlist if str(x) != 'nan']
+        print(str(cleanrxlist[0]).split('-')[1][0])
+        starting_rmod = int(str(cleanrxlist[0]).split('-')[1][0])
+        print(f"starting rmod is..{starting_rmod}")
         print(f"cleanrxlist..{cleanrxlist}")
         print(f"lenght of cleanrxlist..{len(cleanrxlist)}")
         new_cleanrxlist = []
-        for l in range(1, (int(len(cleanrxlist)/4)+2)):
+        for l in range(starting_rmod, starting_rmod + (int(len(cleanrxlist)/4)+2)):
             rmod1_list = [x for x in cleanrxlist if str(
                 x).find(f'RMOD-{l}') > -1]
             print(f"list containing RMOD-{l}..{len(rmod1_list)}")

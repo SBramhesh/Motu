@@ -33,7 +33,7 @@ if authentication_status:
         # "Files Processed (Raw Data + Summary)": fireStoreapp,
         "Process AT&T Log Files (RSSI)": attLogs,
         "5G Nokia Scripting": nrcell_replace,
-        "Upload XML template": aloha_dict,
+        "Admin Module": aloha_dict,
     }
     PAGES = {
         "Upload  New File (RTWP + VSWR)": streamapp,

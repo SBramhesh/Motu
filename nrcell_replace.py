@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
+import threading
+import time
 from io import StringIO
 from io import BytesIO
 import streamlit as st
@@ -46,8 +48,8 @@ def app():
                 for mi in mrbts_key_list:
                     modify_mrbts_tag(mi, mrbts_par_dict.get(mi))
                 process_tnd_pars()
-                remove_blank_spaces()
                 process_lte_cellpar()
+                remove_blank_spaces()
                 st.success('XML successfully parsed :point_down:!!')
                 # st.write(f"*VSWR*: :point_down:")
             st.session_state['download'] = True
@@ -492,7 +494,8 @@ def app():
                 print('---')
                 if mf_tag.parent.name.find('managedObject') > -1:
                     # localIpAddr IPF-2
-                    if mf_tag.parent['distName'].find('ETHIF-1/VLANIF-1') > -1:
+                    # TNL-1/ETHSVC-1/ETHIF-1/VLANIF-1
+                    if mf_tag.parent['distName'].find('TNL-1/ETHSVC-1/ETHIF-1/VLANIF-1') > -1:
                         mf_val = mf_dict.get(bts_name.lstrip().rstrip())
                         print(f"bstName is..{bts_name}")
                         print(f"vlan ID  is.. {int(mf_val)}")
@@ -879,6 +882,7 @@ def app():
 
         def remove_blank_spaces():
             tags = soup.find_all('p')
+            print(f"Removing spaces")
             for tag in tags:
                 # print(tag.string)
                 tag.string = str(tag.text).lstrip().rstrip()
@@ -919,15 +923,21 @@ def app():
 
         submitted = st.form_submit_button("Process XML")
         if submitted:
+            remove_blank_spaces()
+            # time.sleep(1)
             process_xml()
 
     if st.session_state['download']:
 
         # or xml.dom.minidom.parseString(xml_string)
         # print(soup.prettify())
+        t1 = threading.Thread(target=remove_blank_spaces)
+        t1.start()
+        t1.join()
         dom = xml.dom.minidom.parseString(str(soup))
         # print(f"minidom..{str(dom.toxml())}")
         pretty_xml_as_string = dom.toprettyxml()
+        # pretty_xml_as_string = xml.dom.ext.PrettyPrint
         # pretty_xml_as_string = str(soup.prettify(formatter=None))
         # print(f"pretty xml...{pretty_xml_as_string}")
         print(f"option selected.. {option}")

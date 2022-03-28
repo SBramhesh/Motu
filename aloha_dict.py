@@ -1,5 +1,7 @@
 from github import Github
 from bs4 import BeautifulSoup
+import threading
+import xml.dom.minidom
 import pickle
 import numpy as np
 import json
@@ -72,10 +74,34 @@ def return_dict():
     return xml_dict
 
 
-def app():
-    st.title('Upload XML template')
+def delete_template(template):
+    try:
+        if exists(f"{str(template)}.xml"):
+            os.remove(f"{str(template)}.xml")
+    except:
+        st.session_state['Removing Files'] = False
+    else:
+        st.session_state['Removing Files'] = True
+        del xml_dict[template]
 
-    with st.form("template_form"):
+    finally:
+        st.session_state['Removing Files'] = False
+
+
+def remove_blank_spaces(soup):
+    tags = soup.find_all('p')
+    print(f"Removing spaces")
+    for tag in tags:
+        # print(tag.string)
+        tag.string = str(tag.text).lstrip().rstrip()
+
+
+def app():
+    st.title('Template Admin')
+    st.session_state['template_download'] = False
+    st.session_state['Removing Files'] = False
+
+    with st.form("upload_template_form"):
         with st.container():
 
             hide_st_style = """
@@ -123,6 +149,74 @@ def app():
                             # prettify the soup object and convert it into a string
                             file.write(str(soup))
                     st.success('File successfully uploaded :fire:!!')
+
+    with st.form("download_template_form"):
+        with st.container():
+
+            hide_st_style = """
+                        <style>
+                        # MainMenu {visibility: hidden;}
+                        footer {visibility: hidden;}
+                        header {visibility: hidden;}
+                        </style>
+                        """
+            st.markdown(hide_st_style, unsafe_allow_html=True)
+
+            # col1, col2 = st.columns([1, 3])
+
+            # col1.markdown('**Upload NR CIQ file**.')
+            xml_list = list(xml_dict.keys())
+            download_option = st.selectbox('Download template file', xml_list)
+            submitted = st.form_submit_button("Download template")
+            if submitted:
+                download_soup = BeautifulSoup(
+                    str(xml_dict[str(download_option).lstrip().rstrip()]), "xml")
+                st.session_state['template_download'] = True
+    if st.session_state['template_download']:
+
+        # or xml.dom.minidom.parseString(xml_string)
+        # print(soup.prettify())
+        t1 = threading.Thread(
+            target=remove_blank_spaces, args=(download_soup))
+        t1.start()
+        t1.join()
+        dom = xml.dom.minidom.parseString(str(download_soup))
+        # print(f"minidom..{str(dom.toxml())}")
+        pretty_xml_as_string = dom.toprettyxml()
+        # pretty_xml_as_string = xml.dom.ext.PrettyPrint
+        # pretty_xml_as_string = str(soup.prettify(formatter=None))
+        # print(f"pretty xml...{pretty_xml_as_string}")
+        print(f"option selected.. {download_option}")
+        st.download_button(label='📥 Download Template XML ',
+                           data=pretty_xml_as_string,
+                           file_name=f'{str(download_option)}.xml')
+    with st.form("delete_template_form"):
+        with st.container():
+
+            hide_st_style = """
+                        <style>
+                        # MainMenu {visibility: hidden;}
+                        footer {visibility: hidden;}
+                        header {visibility: hidden;}
+                        </style>
+                        """
+            st.markdown(hide_st_style, unsafe_allow_html=True)
+
+            # col1, col2 = st.columns([1, 3])
+
+            # col1.markdown('**Upload NR CIQ file**.')
+            xml_list = list(xml_dict.keys())
+            delete_option = st.selectbox('Delete template file', xml_list)
+            submitted = st.form_submit_button("Delete template")
+            if submitted:
+                with st.spinner('Please Kindly Wait...'):
+                    # commit_file()
+                    delete_template(str(delete_option).lstrip().rstrip())
+                    t1 = threading.Thread(target=delete_template, args=(
+                        str(delete_option).lstrip().rstrip()))
+                    t1.start()
+                    t1.join()
+                    st.success('Template successfully deleted :fire:!!')
 
 
 app()

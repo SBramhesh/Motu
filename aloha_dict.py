@@ -73,6 +73,25 @@ def return_dict():
                 xml_dict[key] = str(soup)
     return xml_dict
 
+# def return_par_dict():
+
+#     par_dict = {}
+#     par_files = []
+
+#     for x in os.listdir():
+#         if x.endswith(".xlsx"):
+#             par_files.append(str(x)[:-5])
+
+#     for key in par_files:
+#         if exists(f"{str(key)}.xlsx"):
+#             with open(f"{str(key)}.xlsx", "r", encoding='utf-8') as file:
+#                 ciq_siteMain = pd.read_excel(
+#                     file, sheet_name='SiteMainPar', header=3, skiprows=None)
+#                 ciq_siteMain = ciq_siteMain.dropna(thresh=3)
+#                 ciq_siteMain = ciq_siteMain.iloc[:, 1:]
+#                 par_dict[key] = str(soup)
+#     return par_dict
+
 
 def delete_template(template):
     try:
@@ -211,12 +230,15 @@ def app():
             if submitted:
                 with st.spinner('Please Kindly Wait...'):
                     # commit_file()
-                    delete_template(str(delete_option).lstrip().rstrip())
+                    # delete_template(str(delete_option).lstrip().rstrip())
                     t1 = threading.Thread(target=delete_template, args=(
                         str(delete_option).lstrip().rstrip()))
                     t1.start()
                     t1.join()
                     st.success('Template successfully deleted :fire:!!')
+    with open("Parameter.xlsx", 'rb') as my_file:
+        st.download_button(label='Download Parameter File', data=my_file, file_name='5G_SCF_Parameter.xlsx',
+                           mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
 app()

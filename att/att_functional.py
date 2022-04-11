@@ -93,12 +93,108 @@ def utraCarrierFreq_replace_transducer(soup):
     return soup
 
 
+def adjGnbId_replace_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "adjGnbId"})
+    for mf_tag in mf_tags:
+        mf_tag.string = str(get_ciq_value(
+            "mrbtsId", st.session_state['ciq_sitemain_par']))
+    return soup
+
+
 def gatewayIpv6Addr_replace_transducer(soup):
     mf_tags = soup.find_all(
         attrs={"name": "gatewayIpv6Addr"})
+    for i in [0, 1, 2, 4]:
+        mf_tags[i].string = str(get_ciq_value(
+            "IPV6_SIAD_OAM_IP_DEF_ROUTER", st.session_state['edp_raptor']))
+    mf_tags[3].string = str(get_ciq_value(
+        "IPV6_SIAD_BEARER_IP_DEF_ROUTER", st.session_state['edp_raptor']))
+    return soup
+
+
+def first_localIpAddr_replace_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "localIpAddr"})
+    mf_tags[0].string = str(get_ciq_value(
+        "IPV6_ENODEB_OAM_IP", st.session_state['edp_raptor']))
+    return soup
+
+
+def cPlaneIpAddr_replace_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "cPlaneIpAddr"})
     for mf_tag in mf_tags:
         mf_tag.string = str(get_ciq_value(
-            "IPV6_SIAD_OAM_IP_DEF_ROUTER", st.session_state['edp_raptor']))
+            "IPV6_ENODEB_BEARER_IP", st.session_state['edp_raptor']))
+    return soup
+
+
+def second_localIpAddr_replace_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "localIpAddr"})
+    mf_tags[1].string = str(get_ciq_value(
+        "IPV6_ENODEB_BEARER_IP", st.session_state['edp_raptor']))
+    return soup
+
+
+def first_vlan_replace_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "vlanId"})
+    mf_tags[0].string = str(get_ciq_value(
+        "oam_enodeb_siad_oam_vlan", st.session_state['edp_raptor']))
+    return soup
+
+
+def second_vlan_replace_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "vlanId"})
+    mf_tags[1].string = str(get_ciq_value(
+        "bearer_enodeb_sb_vlan_id", st.session_state['edp_raptor']))
+    return soup
+
+
+def endEarfcnDl_replace_first_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "endEarfcnDl"})
+    ear_ciq = str(get_ear_value(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and ear_ciq != 'nan':
+        mf_tags[0].string = ear_ciq
+        # else delete the <item>
+    return soup
+
+
+def endEarfcnDl_replace_second_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "endEarfcnDl"})
+    ear_ciq = str(get_port_value(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and ear_ciq != 'nan':
+        mf_tags[1].string = ear_ciq
+        # else delete the <item>
+    return soup
+
+
+def startEarfcnDl_replace_second_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "startEarfcnDl"})
+    ear_ciq = str(get_port_value(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and ear_ciq != 'nan':
+        mf_tags[1].string = ear_ciq
+        # else delete the <item>
+    return soup
+
+
+def startEarfcnDl_replace_first_transducer(soup):
+    mf_tags = soup.find_all(
+        attrs={"name": "startEarfcnDl"})
+    ear_ciq = str(get_ear_value(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and ear_ciq != 'nan':
+        mf_tags[0].string = ear_ciq
+        # else delete the <item>
     return soup
 
 
@@ -130,32 +226,15 @@ def replace_transducer_lnbts_mrtbtsid_5(soup):
     return soup_1
 
 
-def get_nrcell_dict(parName, ciq_cell_par):
-    mode = ciq_cell_par[str(parName)]
-    lcrid = ciq_cell_par['lcrid']
-    mode_lst = mode.to_list()
-    lcrid_lst = lcrid.to_list()
-    comb_list = zip(mode_lst, lcrid_lst)
-    dict = {lcrid: mode for mode, lcrid in comb_list}
-    return dict
-
-
 # chain all the processing functions'''
-
-
-def nrcell_modify(key_list, filter_dict, ciq_sheet, soup):
-    for i in key_list:
-        pci_dict = get_nrcell_dict(i, ciq_sheet)
-        filter_function = filter_dict.get(i)
-        comp_function = composite_function(
-            filter_function(nrcell_par_dict.get(i), soup, pci_dict))
-    parName, soup, mf_dict = comp_function()
-    return copy.copy(soup)
-
 
 def transducer_compose(soup):
     transducer_function = composite_function(
-        replace_transducer_lnbts_mrtbtsid_5, replace_transducer_mrbts_mrtbtsid_5, enb_replace_transducer, bts_replace_transducer, userLabel_replace_transducer, utraCarrierFreq_replace_transducer, gatewayIpv6Addr_replace_transducer)
+        replace_transducer_lnbts_mrtbtsid_5, replace_transducer_mrbts_mrtbtsid_5, enb_replace_transducer,
+        bts_replace_transducer, userLabel_replace_transducer, utraCarrierFreq_replace_transducer, gatewayIpv6Addr_replace_transducer,
+        endEarfcnDl_replace_first_transducer, startEarfcnDl_replace_first_transducer, startEarfcnDl_replace_second_transducer,
+        endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
+        second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer)
     return transducer_function(soup)
 
 
@@ -186,11 +265,63 @@ def get_edp_sheet(sheet_name, uploaded_file_edp):
     return edp
 
 
+def get_port_sheet(uploaded_file_port):
+    port = pd.read_excel(uploaded_file_port, header=0, skiprows=None)
+    port = port.iloc[:1, :4]
+    return port
+
+
 def get_ciq_value(parName, sheet):
     par_col = sheet[parName]
     col_list = [b for b in par_col.to_list() if not str(b).find('nan') > -1]
-    par_str = col_list[-1]
+    par_str = col_list[-2]
     return par_str
+
+
+def filter_int_list(par_list):
+    return [e for e in par_list if isinstance(e, int)]
+
+
+def filter_ear_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if int(st.session_state['endEarfcnDl_map'].get(
+        'yes_freq_min')) < int(b) < int(st.session_state['endEarfcnDl_map'].get('yes_freq_max'))]
+    return col_list
+
+
+def filter_port_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if int(st.session_state['endEarfcnDl_map'].get(
+        'port_matrix_min')) < int(b) < int(st.session_state['endEarfcnDl_map'].get('port_matrix_max'))]
+    return col_list
+
+
+def get_ear_return_value(col_list):
+    if len(col_list) > 0:
+        par_str = col_list[-1]
+    else:
+        par_str = 'nan'
+    return par_str
+
+
+def get_port_return_value(col_list):
+    if len(col_list) > 0 and str(st.session_state['port_matrix'].iloc[:, 3][0]).find('YES') > -1:
+        par_str = col_list[-1]
+    else:
+        par_str = 'nan'
+    return par_str
+
+
+def get_ear_value(sheet):
+    par_col = sheet["earfcnDL"]
+    col_list = filter_ear_list(par_col.to_list())
+    return get_ear_return_value(col_list)
+
+
+def get_port_value(sheet):
+    par_col = sheet["earfcnDL"]
+    col_list = filter_port_list(par_col.to_list())
+    return get_port_return_value(col_list)
 
 
 def app():
@@ -199,6 +330,9 @@ def app():
     st.session_state['xml_soup'] = ''
     st.session_state['ciq_sitemain_par'] = ''
     st.session_state['edp_raptor'] = ''
+    st.session_state['port_matrix'] = ''
+    st.session_state['endEarfcnDl_map'] = {'yes_freq_min': 9660, 'yes_freq_max': 9769,
+                                           'port_matrix_min': 66436, 'port_matrix_max': 67335}
 
     def process_xml(soup, ciq_sitemain_par, key_list, filter_dict):
         # st.sidebar.table(ciq_sitemain_par)
@@ -239,8 +373,12 @@ def app():
                 "Upload EDP File", key="edp")
             if uploaded_file_edp_raptor is not None:
                 edp_raptor = get_edp_sheet('raptor', uploaded_file_edp_raptor)
-                # st.sidebar.table(ciq_cell_par)
                 st.session_state['edp_raptor'] = edp_raptor
+            uploaded_file_port_matrix = st.file_uploader(
+                "Upload Port Matrix File", key="port")
+            if uploaded_file_port_matrix is not None:
+                port_matrix = get_port_sheet(uploaded_file_edp_raptor)
+                st.session_state['port_matrix'] = port_matrix
 
             xml_list = list(xml_dict.keys())
             option = st.selectbox('FDD EQM Options', xml_list)

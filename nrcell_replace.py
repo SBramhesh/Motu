@@ -1,18 +1,20 @@
+from turtle import st
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 import threading
 import time
 from io import StringIO
 from io import BytesIO
-import streamlit as st
 import xlsxwriter
 import pandas as pd
 import re
 import copy
 import numpy as np
-import time
 import xml.dom.minidom
 import aloha_dict
+import streamlit as st
+
+
 pd.options.display.precision = 2
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 100)
@@ -28,6 +30,17 @@ xml_dict = aloha_dict.return_dict()
 
 
 def app():
+    # st.set_page_config(
+    #     page_title="5G Nokia Scripting",
+    #     page_icon="🧊",
+    #     layout="wide",
+    #     initial_sidebar_state="expanded",
+    #     menu_items={
+    #         'Get Help': 'https://www.extremelycoolapp.com/help',
+    #         'Report a bug': "https://www.extremelycoolapp.com/bug",
+    #         'About': "# This is a header. This is an *extremely* cool app!"
+    #     }
+    # )
     st.title('5G Nokia Scripting')
     st.session_state['download'] = False
 
@@ -591,6 +604,10 @@ def app():
                     print(f"Modifying {attr_name}..")
                     bts_tag.string = str(get_mrbts_value(
                         mrbts_par)).lstrip().rstrip()
+                elif str(bts_tag.parent['class']).find(':NRBTS') > -1:
+                    print(f"Modifying {attr_name}..")
+                    bts_tag.string = str(get_mrbts_value(
+                        mrbts_par)).lstrip().rstrip()
 
         def modify_nrbts_tag():
             print(str(get_mrbts_value("nrBtsId")).lstrip().rstrip())
@@ -880,6 +897,14 @@ def app():
             print(vlan_dict.get('NPH20115B'))
             replace_tnd_vlan('vlanId', vlan_dict)
 
+        # cool name, but not the opposite of dom.toprettyxml()
+        def fromprettyxml(input_xml):
+            _dom = dom.parseString(input_xml)
+            output_xml = ''.join([line.strip()
+                                 for line in _dom.toxml().splitlines()])
+            _dom.unlink()
+            return output_xml
+
         def remove_blank_spaces():
             tags = soup.find_all('p')
             print(f"Removing spaces")
@@ -913,6 +938,7 @@ def app():
             'btsName': 'btsName',
             'radioMasterDN': 'mrBtsId',
             'moduleLocation': 'btsName',
+            'gNbCuName': 'btsName',
             # 'secondEndpointDN': 'mrBtsId',
             # 'firstEndpointDN': 'mrBtsId',
         }
@@ -935,6 +961,7 @@ def app():
         t1.start()
         t1.join()
         dom = xml.dom.minidom.parseString(str(soup))
+
         # print(f"minidom..{str(dom.toxml())}")
         pretty_xml_as_string = dom.toprettyxml()
         # pretty_xml_as_string = xml.dom.ext.PrettyPrint

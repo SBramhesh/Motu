@@ -1,14 +1,22 @@
+import streamlit as st
+st.set_page_config(
+    page_title="5G Nokia Scripting",
+    page_icon="🧊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+
+)
+import streamlit_authenticator as stauth
+import aloha_dict
+import nrcell_replace
+import vswrapp
+import attLogs
+import streamapp
+
+
+
 # nokia.py
 # import fireStoreapp
-import streamapp
-import attLogs
-import vswrapp
-import nrcell_replace
-import aloha_dict
-import streamlit_authenticator as stauth
-import streamlit as st
-
-
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -16,6 +24,7 @@ hide_st_style = """
             header {visibility: hidden;}
             </style>
             """
+
 st.markdown(hide_st_style, unsafe_allow_html=True)
 names = ['Nokia User', 'Integer User']
 usernames = ['Nokia', 'Integer']

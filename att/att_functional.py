@@ -8,18 +8,16 @@ import pandas as pd
 from functools import reduce
 import xml.dom.minidom
 
-st.set_page_config(
-    page_title="Ex-stream-ly Cool App",
-    page_icon="🧊",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://www.extremelycoolapp.com/help',
-        'Report a bug': "https://www.extremelycoolapp.com/bug",
-        'About': "# This is a header. This is an *extremely* cool app!"
-    }
-)
-xml_dict = xml_templates.return_dict()
+# st.set_page_config(
+#     page_title="AT&T Scripting",
+#     page_icon="🧊",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+#     menu_items={
+#         'Get Help': 'https://www.integertel.com',
+#     }
+# )
+# xml_dict = xml_templates.return_dict()
 
 # mapping of decalrative rules'''
 nrcell_par_dict = {
@@ -209,6 +207,87 @@ def startEarfcnDl_replace_first_transducer(soup):
     return soup
 
 
+def lcrid_transducer(soup):
+    nrdcdpr_soup, lcrid_ciq = lcrid_nrdcdpr_xducer(st.session_state['NRDCDPR'])
+    if lcrid_ciq != 'nan':
+        cmData_tag = soup.cmData
+        cmData_tag.append(nrdcdpr_soup)
+    return soup
+
+
+def psgrp_transducer(soup):
+    psgrp_soup_list = lcrid_psgrp_xducer(st.session_state['PSGRP'])
+    cmData_tag = soup.cmData
+    for p_soup in psgrp_soup_list:
+        cmData_tag.append(p_soup)
+    return soup
+
+
+def lcrid_psgrp_xducer(psgrp_soup):
+    psgrp_soup = delete_items(psgrp_soup)
+    psgrp_list = get_psgrp_value(
+        st.session_state['ciq_cell_par'], psgrp_soup)
+    return list(filter(lambda x: x != 'nan', psgrp_list))
+
+
+def delete_items(psgrp_soup):
+    for i in range(len(psgrp_soup.list.find_all("item"))):
+        psgrp_soup.list.item.decompose()
+    return psgrp_soup
+
+
+def lcrid_nrdcdpr_xducer(nrdcdpr_soup):
+    mf_tags = nrdcdpr_soup.find_all(
+        attrs={"name": "lcrId"})
+    lcrid_ciq = str(get_lcrid_value(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and lcrid_ciq != 'nan':
+        for mf_tag in mf_tags:
+            if not (str(mf_tag.text) in lcrid_ciq):
+                # delete the enclosing <item>
+                item_tag = mf_tag.find_parent("item")
+                item_tag.decompose()
+    return nrdcdpr_soup, lcrid_ciq
+
+
+def eutraCarrierFreq_b66_mfbipr(mfbirp_soup):
+    mf_tags = mfbirp_soup.find_all(
+        attrs={"name": "eutraCarrierFreq"})
+    eutra_ciq = str(get_eutra_value_66(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and eutra_ciq != 'nan':
+        mf_tags[0].string = eutra_ciq
+    return mfbirp_soup, eutra_ciq
+
+
+def eutraCarrierFreq_b12_mfbipr(mfbirp_soup):
+    mf_tags = mfbirp_soup.find_all(
+        attrs={"name": "eutraCarrierFreq"})
+    eutra_ciq = str(get_eutra_value_12(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and eutra_ciq != 'nan':
+        mf_tags[0].string = eutra_ciq
+    return mfbirp_soup, eutra_ciq
+
+
+def eutraCarrierFreq_b66_append_transducer(soup):
+    mfbipr_soup, eutra_ciq = eutraCarrierFreq_b66_mfbipr(
+        st.session_state['mfbipr_66'])
+    if eutra_ciq != 'nan':
+        cmData_tag = soup.cmData
+        cmData_tag.append(mfbipr_soup)
+    return soup
+
+
+def eutraCarrierFreq_b12_append_transducer(soup):
+    mfbipr_soup, eutra_ciq = eutraCarrierFreq_b12_mfbipr(
+        st.session_state['mfbipr_12'])
+    if eutra_ciq != 'nan':
+        cmData_tag = soup.cmData
+        cmData_tag.append(mfbipr_soup)
+    return soup
+
+
 # pure function transducer replacing all pattern instances'''
 
 def replace_transducer(soup, pattern,  replace_value=None, num_digits=None):
@@ -245,7 +324,8 @@ def transducer_compose(soup):
         bts_replace_transducer, userLabel_replace_transducer, utraCarrierFreq_replace_transducer, gatewayIpv6Addr_replace_transducer,
         endEarfcnDl_replace_first_transducer, startEarfcnDl_replace_first_transducer, startEarfcnDl_replace_second_transducer,
         endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
-        second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer)
+        second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer, eutraCarrierFreq_b66_append_transducer,
+        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer)
     return transducer_function(soup)
 
 
@@ -300,6 +380,21 @@ def filter_ear_list(par_list):
     return col_list
 
 
+def filter_eutra_list_66(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if int(st.session_state['mfbipr_map'].get(
+        'b66_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b66_max'))]
+    return col_list
+
+
+def filter_eutra_list_12(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b12_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b12_max'))) or (int(st.session_state['mfbipr_map'].get(
+            'b17_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b17_max')))]
+    return col_list
+
+
 def filter_port_list(par_list):
     int_list = filter_int_list(par_list)
     col_list = [b for b in int_list if int(st.session_state['endEarfcnDl_map'].get(
@@ -310,6 +405,14 @@ def filter_port_list(par_list):
 def get_ear_return_value(col_list):
     if len(col_list) > 0:
         par_str = col_list[-1]
+    else:
+        par_str = 'nan'
+    return par_str
+
+
+def get_lcrid_return_value(col_list):
+    if len(col_list) > 0:
+        par_str = col_list
     else:
         par_str = 'nan'
     return par_str
@@ -329,6 +432,109 @@ def get_ear_value(sheet):
     return get_ear_return_value(col_list)
 
 
+def get_lcrid_value(sheet):
+    par_col = sheet["lcrId"]
+    col_list = filter_int_list(par_col.to_list())
+    return get_lcrid_return_value(col_list)
+
+
+def get_psgrp_value(sheet, psgrp_soup):
+    par_col_key = sheet["LocalcellresourceID"].to_list()[4:]
+    par_col_value = sheet["Cellname"].to_list()[4:]
+
+    psgrp_dict = {lcrid: cellName for lcrid,
+                  cellName in zip(par_col_key, par_col_value)}
+    filt_psgrp_dict = filter_psgrp_panh(par_col_key, psgrp_dict)
+
+    alpha = get_alpha_values(filt_psgrp_dict, psgrp_soup)
+    beta = get_beta_values(filt_psgrp_dict, psgrp_soup)
+    gamma = get_gamma_values(filt_psgrp_dict, psgrp_soup)
+    delta = get_delta_values(filt_psgrp_dict, psgrp_soup)
+    epsilon = get_epsilon_values(filt_psgrp_dict, psgrp_soup)
+
+    return [alpha, beta, gamma, delta, epsilon]
+
+
+def get_alpha_values(filt_psgrp_dict, psgrp_soup):
+    filter_string = "A_"
+    psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '0'
+    filtered_dict = {
+        k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
+    return get_psgrp_return_value(filtered_dict, psgrp_soup)
+
+
+def get_beta_values(filt_psgrp_dict, psgrp_soup):
+    filter_string = "B_"
+    psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '1'
+    filtered_dict = {
+        k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
+    return get_psgrp_return_value(filtered_dict, psgrp_soup)
+
+
+def get_gamma_values(filt_psgrp_dict, psgrp_soup):
+    filter_string = "C_"
+    psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '2'
+    filtered_dict = {
+        k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
+    return get_psgrp_return_value(filtered_dict, psgrp_soup)
+
+
+def get_delta_values(filt_psgrp_dict, psgrp_soup):
+    filter_string = "D_"
+    psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '3'
+    filtered_dict = {
+        k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
+    return get_psgrp_return_value(filtered_dict, psgrp_soup)
+
+
+def get_epsilon_values(filt_psgrp_dict, psgrp_soup):
+    filter_string = "E_"
+    psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '4'
+    filtered_dict = {
+        k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
+    return get_psgrp_return_value(filtered_dict, psgrp_soup)
+
+
+def get_psgrp_return_value(filtered_dict, psgrp_soup):
+    if len(len(filtered_dict)) > 0:
+        for k in list(filtered_dict.values()):
+            psgrp_soup.list.append(BeautifulSoup(return_item(k), "xml"))
+            psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '0'
+            dom = xml.dom.minidom.parseString(str(psgrp_soup))
+        par_str = BeautifulSoup(dom.toxml().replace('\n', ''), "xml")
+    else:
+        par_str = 'nan'
+    return par_str
+
+
+def return_item(i):
+    return r'<item><p name="lbpsCellSOOrder">100</p><p name="lnCelId">' + str(i) + r'</p></item>'
+
+
+def filter_psgrp_panh(par_col_key, psgrp_dict):
+    key_list = st.session_state['psgrp_filter']
+    filt_set = set(key_list)
+    lcrid = set(par_col_key)
+    filt_lcrid = [x for x in lcrid if x not in filt_set]
+    print(filt_lcrid)
+    filt_vals = [psgrp_dict[i] for i in filt_lcrid]
+    print(filt_vals)
+    return {Cellname: LocalcellresourceID for Cellname, LocalcellresourceID
+            in zip(filt_vals, filt_lcrid)}
+
+
+def get_eutra_value_66(sheet):
+    par_col = sheet["earfcnDL"]
+    col_list = filter_eutra_list_66(par_col.to_list())
+    return get_ear_return_value(col_list)
+
+
+def get_eutra_value_12(sheet):
+    par_col = sheet["earfcnDL"]
+    col_list = filter_eutra_list_12(par_col.to_list())
+    return get_ear_return_value(col_list)
+
+
 def get_port_value(sheet):
     par_col = sheet["earfcnDL"]
     col_list = filter_port_list(par_col.to_list())
@@ -344,6 +550,20 @@ def app():
     st.session_state['port_matrix'] = ''
     st.session_state['endEarfcnDl_map'] = {'yes_freq_min': 9660, 'yes_freq_max': 9769,
                                            'port_matrix_min': 66436, 'port_matrix_max': 67335}
+    st.session_state['mfbipr_map'] = {'b12_min': 5010, 'b12_max': 5179,
+                                      'b17_min': 5730, 'b17_max': 5849, 'b66_min': 66436, 'b66_max': 67335}
+    st.session_state['psgrp_filter'] = [25, 49, 72, 73, 193, 194, 195]
+    # MFBIPR-B66
+    st.session_state['mfbipr_66'] = BeautifulSoup(
+        xml_templates.return_xml('MFBIPR-B66'), "xml")
+    st.session_state['mfbipr_12'] = BeautifulSoup(
+        xml_templates.return_xml('MFBIPR-B12'), "xml")
+    st.session_state['NRDCDPR'] = BeautifulSoup(
+        xml_templates.return_xml('NRDCDPR'), "xml")
+    st.session_state['PSGRP'] = BeautifulSoup(
+        xml_templates.return_xml('PSGRP'), "xml")
+    st.session_state['root_xml'] = BeautifulSoup(
+        xml_templates.return_xml(), "xml")
 
     def process_xml(soup, ciq_sitemain_par, key_list, filter_dict):
         # st.sidebar.table(ciq_sitemain_par)
@@ -391,17 +611,16 @@ def app():
                 port_matrix = get_port_sheet(uploaded_file_edp_raptor)
                 st.session_state['port_matrix'] = port_matrix
 
-            xml_list = list(xml_dict.keys())
-            option = st.selectbox('FDD EQM Options', xml_list)
+            # xml_list = list(xml_dict.keys())
+            # option = st.selectbox('FDD EQM Options', xml_list)
             # print(
             # len(xml_dict["3AHLOA(shared)_20BW+3AEHC (shared)_100BW_NoAHFIG"]))
-            xml_str = str(xml_dict[option]).replace('\n', '')
 
-            soup = BeautifulSoup(xml_str, "xml")
+            soup = st.session_state['root_xml']
         submitted = st.form_submit_button("Process XML")
         if submitted:
             # time.sleep(1)
-            final_soup = process_xml(
+            st.session_state['xml_soup'] = process_xml(
                 soup, ciq_sitemain_par, key_list, filter_dict)
     if st.session_state['download']:
 
@@ -413,7 +632,7 @@ def app():
             "mrbtsId", st.session_state['ciq_sitemain_par'])
         st.download_button(label='📥 Download XML ',
                            data=pretty_xml_as_string,
-                           file_name=f'{str(mrbts_id)}-{option}.xml')
+                           file_name=f'{str(mrbts_id)}.xml')
 
 
 app()

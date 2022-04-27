@@ -7,6 +7,7 @@ import xlsxwriter
 import pandas as pd
 from functools import reduce
 import xml.dom.minidom
+import functools
 
 # st.set_page_config(
 #     page_title="AT&T Scripting",
@@ -224,9 +225,9 @@ def psgrp_transducer(soup):
 
 
 def lcrid_psgrp_xducer(psgrp_soup):
-    psgrp_soup = delete_items(psgrp_soup)
+    st.session_state['PSGRP'] = delete_items(psgrp_soup)
     psgrp_list = get_psgrp_value(
-        st.session_state['ciq_cell_par'], psgrp_soup)
+        st.session_state['ciq_cell_par'])
     return list(filter(lambda x: x != 'nan', psgrp_list))
 
 
@@ -438,7 +439,7 @@ def get_lcrid_value(sheet):
     return get_lcrid_return_value(col_list)
 
 
-def get_psgrp_value(sheet, psgrp_soup):
+def get_psgrp_value(sheet):
     par_col_key = sheet["LocalcellresourceID"].to_list()[4:]
     par_col_value = sheet["Cellname"].to_list()[4:]
 
@@ -446,60 +447,68 @@ def get_psgrp_value(sheet, psgrp_soup):
                   cellName in zip(par_col_key, par_col_value)}
     filt_psgrp_dict = filter_psgrp_panh(par_col_key, psgrp_dict)
 
-    alpha = get_alpha_values(filt_psgrp_dict, psgrp_soup)
-    beta = get_beta_values(filt_psgrp_dict, psgrp_soup)
-    gamma = get_gamma_values(filt_psgrp_dict, psgrp_soup)
-    delta = get_delta_values(filt_psgrp_dict, psgrp_soup)
-    epsilon = get_epsilon_values(filt_psgrp_dict, psgrp_soup)
+    alpha = get_alpha_values(filt_psgrp_dict)
+    beta = get_beta_values(filt_psgrp_dict)
+    gamma = get_gamma_values(filt_psgrp_dict)
+    delta = get_delta_values(filt_psgrp_dict)
+    epsilon = get_epsilon_values(filt_psgrp_dict)
 
     return [alpha, beta, gamma, delta, epsilon]
 
 
-def get_alpha_values(filt_psgrp_dict, psgrp_soup):
+def get_alpha_values(filt_psgrp_dict):
     filter_string = "A_"
+    psgrp_soup = st.session_state['PSGRP']
     psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '0'
     filtered_dict = {
         k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
     return get_psgrp_return_value(filtered_dict, psgrp_soup)
 
 
-def get_beta_values(filt_psgrp_dict, psgrp_soup):
+def get_beta_values(filt_psgrp_dict):
     filter_string = "B_"
+    psgrp_soup = st.session_state['PSGRP']
     psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '1'
     filtered_dict = {
         k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
     return get_psgrp_return_value(filtered_dict, psgrp_soup)
 
 
-def get_gamma_values(filt_psgrp_dict, psgrp_soup):
+def get_gamma_values(filt_psgrp_dict):
     filter_string = "C_"
+    psgrp_soup = st.session_state['PSGRP']
     psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '2'
     filtered_dict = {
         k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
     return get_psgrp_return_value(filtered_dict, psgrp_soup)
 
 
-def get_delta_values(filt_psgrp_dict, psgrp_soup):
+def get_delta_values(filt_psgrp_dict):
     filter_string = "D_"
+    psgrp_soup = st.session_state['PSGRP']
     psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '3'
     filtered_dict = {
         k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
     return get_psgrp_return_value(filtered_dict, psgrp_soup)
 
 
-def get_epsilon_values(filt_psgrp_dict, psgrp_soup):
+def get_epsilon_values(filt_psgrp_dict):
     filter_string = "E_"
+    psgrp_soup = st.session_state['PSGRP']
     psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '4'
     filtered_dict = {
         k: v for (k, v) in filt_psgrp_dict.items() if filter_string in k}
     return get_psgrp_return_value(filtered_dict, psgrp_soup)
 
+# (reduce(lambda a, b: a if a > b else b, lis))
+#  reduce(lambda a, b: a+b, lis)
+
 
 def get_psgrp_return_value(filtered_dict, psgrp_soup):
-    if len(len(filtered_dict)) > 0:
+    psgrp_soup = delete_items(psgrp_soup)
+    if len(filtered_dict) > 0:
         for k in list(filtered_dict.values()):
             psgrp_soup.list.append(BeautifulSoup(return_item(k), "xml"))
-            psgrp_soup.managedObject['distName'] = psgrp_soup.managedObject['distName'][:-1] + '0'
             dom = xml.dom.minidom.parseString(str(psgrp_soup))
         par_str = BeautifulSoup(dom.toxml().replace('\n', ''), "xml")
     else:

@@ -208,6 +208,93 @@ def startEarfcnDl_replace_first_transducer(soup):
     return soup
 
 
+def freqLayListDedLteLB_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListDedLteLB"})
+    ear_ciq_list = str(get_freqLayListDedLteLB_value(
+        st.session_state['ciq_cell_par']))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListDedLteLB")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListDedLteLB")
+    return modpr_soup
+
+
+def freqLayListLte_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListLte"})
+    ear_ciq_list = get_freqLayListLte_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListLte")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListLte")
+    return modpr_soup
+
+
+def freqLayListPsHoWcdma_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListPsHoWcdma"})
+    ear_ciq_list = get_freqLayListPsHoWcdma_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListPsHoWcdma")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListPsHoWcdma")
+    return modpr_soup
+
+
+def redirFreqUtra_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "redirFreqUtra"})
+    ear_ciq_list = get_redirFreqUtra_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        mf_tags[-1].string = str(ear_ciq_list[-1])
+    return modpr_soup
+
+
+def redirFreqEutra_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "redirFreqEutra"})
+    ear_ciq_list = get_redirFreqEutra_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        mf_tags[-1].string = str(ear_ciq_list[-1])
+    return modpr_soup
+
+
+def freqLayListSrvccWcdma_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListSrvccWcdma"})
+    ear_ciq_list = get_freqLayListPsHoWcdma_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListSrvccWcdma")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListSrvccWcdma")
+    return modpr_soup
+
+
+def freqLayListServiceBasedHo_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListServiceBasedHo"})
+    ear_ciq_list = get_freqLayListServiceBasedHo_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListServiceBasedHo")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(
+                modpr_soup, freq, "freqLayListServiceBasedHo")
+    return modpr_soup
+
+
 def lcrid_transducer(soup):
     nrdcdpr_soup, lcrid_ciq = lcrid_nrdcdpr_xducer(st.session_state['NRDCDPR'])
     if lcrid_ciq != 'nan':
@@ -224,6 +311,13 @@ def psgrp_transducer(soup):
     return soup
 
 
+def modpr_transducer(soup):
+    processed_modpr = modpr_compose(st.session_state['MODPR'])
+    cmData_tag = soup.cmData
+    cmData_tag.append(processed_modpr)
+    return soup
+
+
 def lcrid_psgrp_xducer(psgrp_soup):
     st.session_state['PSGRP'] = delete_items(psgrp_soup)
     psgrp_list = get_psgrp_value(
@@ -235,6 +329,20 @@ def delete_items(psgrp_soup):
     for i in range(len(psgrp_soup.list.find_all("item"))):
         psgrp_soup.list.item.decompose()
     return psgrp_soup
+
+
+def delete_p_tags(modpr_soup, freq_type):
+    for i in range(len(modpr_soup.find_all(attrs={"name": freq_type})[0].find_all("p"))):
+        modpr_soup.find(attrs={"name": freq_type}).p.decompose()
+    return modpr_soup
+
+
+def add_p_tags(modpr_soup, text, freq_type):
+    original_tag = modpr_soup.find_all(attrs={"name": freq_type})[0]
+    new_tag = modpr_soup.new_tag("p")
+    original_tag.append(new_tag)
+    new_tag.string = str(text)
+    return modpr_soup
 
 
 def lcrid_nrdcdpr_xducer(nrdcdpr_soup):
@@ -326,8 +434,15 @@ def transducer_compose(soup):
         endEarfcnDl_replace_first_transducer, startEarfcnDl_replace_first_transducer, startEarfcnDl_replace_second_transducer,
         endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
         second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer, eutraCarrierFreq_b66_append_transducer,
-        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer)
+        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer)
     return transducer_function(soup)
+
+
+def modpr_compose(modpr_soup):
+    modpr_function = composite_function(freqLayListServiceBasedHo_xducer, freqLayListDedLteLB_xducer,
+                                        freqLayListLte_xducer, freqLayListSrvccWcdma_xducer, redirFreqUtra_xducer, redirFreqEutra_xducer,
+                                        freqLayListPsHoWcdma_xducer)
+    return modpr_function(modpr_soup)
 
 
 # composite_function accepts N
@@ -381,6 +496,13 @@ def filter_ear_list(par_list):
     return col_list
 
 
+def filter_earfcnDl_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if int(st.session_state['endEarfcnDl_map'].get(
+        'yes_freq_min')) < int(b) < int(st.session_state['endEarfcnDl_map'].get('yes_freq_max'))]
+    return col_list
+
+
 def filter_eutra_list_66(par_list):
     int_list = filter_int_list(par_list)
     col_list = [b for b in int_list if int(st.session_state['mfbipr_map'].get(
@@ -393,6 +515,20 @@ def filter_eutra_list_12(par_list):
     col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
         'b12_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b12_max'))) or (int(st.session_state['mfbipr_map'].get(
             'b17_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b17_max')))]
+    return col_list
+
+
+def filter_b14_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b14_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b14_max')))]
+    return col_list
+
+
+def filter_b2_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b2_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b2_max')))]
     return col_list
 
 
@@ -428,9 +564,68 @@ def get_port_return_value(col_list):
 
 
 def get_ear_value(sheet):
-    par_col = sheet["earfcnDL"]
+    par_col = sheet["EARFCNdownlink"]
     col_list = filter_ear_list(par_col.to_list())
     return get_ear_return_value(col_list)
+
+
+def get_wcdma_value(sheet):
+    par_col = sheet["dlCarFrqUtra"]
+    col_list = filter_int_list(par_col.to_list())
+    return get_ear_return_value(col_list)
+
+
+def get_wcdma_femto_value(sheet):
+    par_col = sheet["dlCarFrqUtra_FEMTO"]
+    col_list = filter_int_list(par_col.to_list())
+    return get_ear_return_value(col_list)
+
+
+def get_freqLayListDedLteLB_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    dl_only_value = get_ear_value(sheet)
+    port_value = get_port_value(sheet)
+    dl_list = [b for b in filt_list if b not in [dl_only_value, port_value]]
+    return dl_list
+
+
+def get_freqLayListLte_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    dl_only_value = get_ear_value(sheet)
+    port_value = get_port_value(sheet)
+    b14_value = filter_b14_list(filt_list)
+    dl_list = [b for b in filt_list if b not in [
+        dl_only_value, port_value, b14_value]]
+    return dl_list
+
+
+def get_freqLayListPsHoWcdma_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    wcdma_value = get_wcdma_value(sheet)
+    wcdma_femto_value = get_wcdma_femto_value(sheet)
+    dl_list = [b for b in filt_list if b in [wcdma_femto_value, wcdma_value]]
+    return dl_list
+
+
+def get_redirFreqUtra_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    wcdma_value = get_wcdma_value(sheet)
+    dl_list = [b for b in filt_list if b in [wcdma_value]]
+    return dl_list
+
+
+def get_redirFreqEutra_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    b2_value = filter_b2_list(filt_list)
+    dl_list = [b for b in filt_list if b in [b2_value]]
+    return dl_list
+
+
+def get_freqLayListServiceBasedHo_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    b12_value = filter_eutra_list_12(filt_list)
+    dl_list = [b for b in filt_list if b in [b12_value]]
+    return dl_list
 
 
 def get_lcrid_value(sheet):
@@ -454,6 +649,15 @@ def get_psgrp_value(sheet):
     epsilon = get_epsilon_values(filt_psgrp_dict)
 
     return [alpha, beta, gamma, delta, epsilon]
+
+
+def get_modpr_list(sheet):
+    par_col_key = sheet["LocalcellresourceID"].to_list()[4:]
+    par_col_value = sheet["EARFCNdownlink"].to_list()[4:]
+
+    psgrp_dict = {lcrid: earfcnDL for lcrid,
+                  earfcnDL in zip(par_col_key, par_col_value)}
+    return filter_modpr_panh(par_col_key, psgrp_dict)
 
 
 def get_alpha_values(filt_psgrp_dict):
@@ -532,20 +736,31 @@ def filter_psgrp_panh(par_col_key, psgrp_dict):
             in zip(filt_vals, filt_lcrid)}
 
 
+def filter_modpr_panh(par_col_key, modpr_dict):
+    key_list = st.session_state['psgrp_filter']
+    filt_set = set(key_list)
+    lcrid = set(par_col_key)
+    filt_lcrid = [x for x in lcrid if x not in filt_set]
+    print(filt_lcrid)
+    filt_vals = [modpr_dict[i] for i in filt_lcrid]
+    print(filt_vals)
+    return filt_vals
+
+
 def get_eutra_value_66(sheet):
-    par_col = sheet["earfcnDL"]
+    par_col = sheet["EARFCNdownlink"]
     col_list = filter_eutra_list_66(par_col.to_list())
     return get_ear_return_value(col_list)
 
 
 def get_eutra_value_12(sheet):
-    par_col = sheet["earfcnDL"]
+    par_col = sheet["EARFCNdownlink"]
     col_list = filter_eutra_list_12(par_col.to_list())
     return get_ear_return_value(col_list)
 
 
 def get_port_value(sheet):
-    par_col = sheet["earfcnDL"]
+    par_col = sheet["EARFCNdownlink"]
     col_list = filter_port_list(par_col.to_list())
     return get_port_return_value(col_list)
 
@@ -560,7 +775,8 @@ def app():
     st.session_state['endEarfcnDl_map'] = {'yes_freq_min': 9660, 'yes_freq_max': 9769,
                                            'port_matrix_min': 66436, 'port_matrix_max': 67335}
     st.session_state['mfbipr_map'] = {'b12_min': 5010, 'b12_max': 5179,
-                                      'b17_min': 5730, 'b17_max': 5849, 'b66_min': 66436, 'b66_max': 67335}
+                                      'b17_min': 5730, 'b17_max': 5849, 'b66_min': 66436, 'b66_max': 67335,
+                                      'b14_min': 5280, 'b14_max': 5379, 'b2_min': 600, 'b2_max': 800}
     st.session_state['psgrp_filter'] = [25, 49, 72, 73, 193, 194, 195]
     # MFBIPR-B66
     st.session_state['mfbipr_66'] = BeautifulSoup(
@@ -571,6 +787,8 @@ def app():
         xml_templates.return_xml('NRDCDPR'), "xml")
     st.session_state['PSGRP'] = BeautifulSoup(
         xml_templates.return_xml('PSGRP'), "xml")
+    st.session_state['MODPR'] = BeautifulSoup(
+        xml_templates.return_xml('MODPR'), "xml")
     st.session_state['root_xml'] = BeautifulSoup(
         xml_templates.return_xml(), "xml")
 

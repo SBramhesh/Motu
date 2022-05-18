@@ -220,6 +220,55 @@ def freqLayListDedLteLB_xducer(modpr_soup):
     return modpr_soup
 
 
+def freqLayListDedLteLB_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListDedLteLB"})
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListDedLteLB")
+    for mf_tag in mf_tags:
+        parent_mo = str(mf_tag.find_parent(
+            "managedObject")['class']).split('/')[-1]
+        ear_ciq_list = str(get_freqLayListDedLteLB_value(
+            st.session_state['ciq_cell_par'], parent_mo))
+        if len(mf_tag) > 0 and ear_ciq_list != 'nan':
+            for freq in ear_ciq_list:
+                new_tag = modpr_soup.new_tag("p")
+                mf_tag.append(new_tag)
+                new_tag.string = str(freq)
+    return modpr_soup
+
+
+def dlCarFrqEutL_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "dlCarFrqEutL"})
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_dlCarFrqEutL_item_tags(modpr_soup)
+    for mf_tag in mf_tags:
+        parent_mo = str(mf_tag.find_parent(
+            "managedObject")['class'])
+        ear_ciq_list = str(get_dlCarFrqEutL_value(
+            st.session_state['ciq_cell_par'], parent_mo))
+        if len(mf_tag) > 0 and ear_ciq_list != 'nan':
+            for freq in ear_ciq_list:
+                new_tag = modpr_soup.new_tag("p")
+                mf_tag.append(new_tag)
+                new_tag.string = str(freq)
+    return modpr_soup
+
+
+def redirFreqUtra_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "redirFreqUtra"})
+    for mf_tag in mf_tags:
+        parent_mo = str(mf_tag.find_parent(
+            "managedObject")['class'])
+        ear_ciq_list = str(get_redirFreqUtra_value(
+            st.session_state['ciq_cell_par'], parent_mo))
+        if len(mf_tag) > 0 and ear_ciq_list != 'nan':
+            mf_tag.string = str(ear_ciq_list[-1])
+    return modpr_soup
+
+
 def freqLayListLte_xducer(modpr_soup):
     mf_tags = modpr_soup.find_all(
         attrs={"name": "freqLayListLte"})
@@ -230,6 +279,24 @@ def freqLayListLte_xducer(modpr_soup):
         modpr_soup = delete_p_tags(modpr_soup, "freqLayListLte")
         for freq in ear_ciq_list:
             modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListLte")
+    return modpr_soup
+
+
+def freqLayListLte_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListLte"})
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListDedLteLB")
+    for mf_tag in mf_tags:
+        parent_mo = str(mf_tag.find_parent(
+            "managedObject")['class']).split('/')[-1]
+        ear_ciq_list = str(get_freqLayListLte_mopr_value(
+            st.session_state['ciq_cell_par'], parent_mo))
+        if len(mf_tag) > 0 and ear_ciq_list != 'nan':
+            for freq in ear_ciq_list:
+                new_tag = modpr_soup.new_tag("p")
+                mf_tag.append(new_tag)
+                new_tag.string = str(freq)
     return modpr_soup
 
 
@@ -246,6 +313,32 @@ def freqLayListPsHoWcdma_xducer(modpr_soup):
     return modpr_soup
 
 
+def freqLayListPsHoWcdma_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListPsHoWcdma"})
+    ear_ciq_list = get_freqLayListPsHoWcdma_mopr_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListPsHoWcdma")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListPsHoWcdma")
+    return modpr_soup
+
+
+def freqLayListEndcHo_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListEndcHo"})
+    ear_ciq_list = get_freqLayListEndcHo_mopr_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListEndcHo")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListEndcHo")
+    return modpr_soup
+
+
 def redirFreqUtra_xducer(modpr_soup):
     mf_tags = modpr_soup.find_all(
         attrs={"name": "redirFreqUtra"})
@@ -253,7 +346,8 @@ def redirFreqUtra_xducer(modpr_soup):
         st.session_state['ciq_cell_par'])
     ear_ciq_list = list(set(ear_ciq_list))
     if len(mf_tags) > 0 and ear_ciq_list != 'nan':
-        mf_tags[-1].string = str(ear_ciq_list[-1])
+        for mf_tag in mf_tags:
+            mf_tag.string = str(ear_ciq_list[-1])
     return modpr_soup
 
 
@@ -272,6 +366,19 @@ def freqLayListSrvccWcdma_xducer(modpr_soup):
     mf_tags = modpr_soup.find_all(
         attrs={"name": "freqLayListSrvccWcdma"})
     ear_ciq_list = get_freqLayListPsHoWcdma_value(
+        st.session_state['ciq_cell_par'])
+    ear_ciq_list = list(set(ear_ciq_list))
+    if len(mf_tags) > 0 and ear_ciq_list != 'nan':
+        modpr_soup = delete_p_tags(modpr_soup, "freqLayListSrvccWcdma")
+        for freq in ear_ciq_list:
+            modpr_soup = add_p_tags(modpr_soup, freq, "freqLayListSrvccWcdma")
+    return modpr_soup
+
+
+def freqLayListSrvccWcdma_mopr_xducer(modpr_soup):
+    mf_tags = modpr_soup.find_all(
+        attrs={"name": "freqLayListSrvccWcdma"})
+    ear_ciq_list = get_freqLayListPsHoWcdma_mopr_value(
         st.session_state['ciq_cell_par'])
     ear_ciq_list = list(set(ear_ciq_list))
     if len(mf_tags) > 0 and ear_ciq_list != 'nan':
@@ -311,10 +418,25 @@ def psgrp_transducer(soup):
     return soup
 
 
+def capr_transducer(soup):
+    psgrp_soup_list = capr_xducer(st.session_state['CAPR'])
+    cmData_tag = soup.cmData
+    for p_soup in psgrp_soup_list:
+        cmData_tag.append(p_soup)
+    return soup
+
+
 def modpr_transducer(soup):
     processed_modpr = modpr_compose(st.session_state['MODPR'])
     cmData_tag = soup.cmData
     cmData_tag.append(processed_modpr)
+    return soup
+
+
+def mopr_transducer(soup):
+    processed_mopr = mopr_compose(st.session_state['MOPR'])
+    cmData_tag = soup.cmData
+    cmData_tag.append(processed_mopr)
     return soup
 
 
@@ -325,6 +447,58 @@ def lcrid_psgrp_xducer(psgrp_soup):
     return list(filter(lambda x: x != 'nan', psgrp_list))
 
 
+def capr_xducer(capr_soup):
+    capr_dict = get_capr_value(
+        st.session_state['ciq_cell_par'])
+    capr_band_dict = get_capr_band_value(
+        st.session_state['ciq_cell_par'])
+    capr_list = []
+    for lcrid in capr_dict.keys():
+        for earfcnDl in capr_band_dict.keys():
+            new_capr_soup = process_capr_soup(capr_soup, lcrid, earfcnDl)
+            capr_list.append(new_capr_soup)
+    return list(filter(lambda x: x != 'nan', capr_list))
+
+
+def process_capr_soup(kapr_soup, lcrid, earfcnDl):
+    dist_string = kapr_soup.managedObject['distName']
+    dist_array = dist_string.split('/')
+    kapr_soup.managedObject['distName'] = '/'.join([
+        dist_array[0], dist_array[1], "LNCEL-" + lcrid, "CAPR-" + earfcnDl])
+    kapr_soup = process_resprio(kapr_soup, get_resprio_val(earfcnDl))
+    kapr_soup = process_enableA3Event(kapr_soup, earfcnDl)
+    return kapr_soup
+
+
+def get_resprio_val(earfcnDl):
+    capr_band_dict = get_capr_band_value(
+        st.session_state['ciq_cell_par'])
+    resprio_val = 0
+    if is_medium_band(earfcnDl) == 'True':
+        resprio_val = st.sesssion_state['freq_prio_medium_band'][capr_band_dict[earfcnDl]]
+    if is_low_band(earfcnDl) == 'True':
+        resprio_val = st.sesssion_state['freq_prio_low_band'][capr_band_dict[earfcnDl]]
+    if is_high_band(earfcnDl) == 'True':
+        resprio_val = st.sesssion_state['freq_prio_high_band']
+    return resprio_val
+
+
+def process_resprio(kapr_soup, resprio_val):
+    freq_tags = kapr_soup.find_all(attrs={"name": "sFreqPrio"})
+    for freq_tag in freq_tags:
+        freq_tag.string = resprio_val
+    return kapr_soup
+
+
+def process_enableA3Event(kapr_soup, earfcnDl):
+    enable_A3Event_val = len(filter_b14_list(
+        [earfcnDl]) + filter_earfcnDl_list([earfcnDl]) + filter_port_list([earfcnDl])) > 0
+    freq_tags = kapr_soup.find_all(attrs={"name": "enableA3Event"})
+    for freq_tag in freq_tags:
+        freq_tag.string = enable_A3Event_val
+    return kapr_soup
+
+
 def delete_items(psgrp_soup):
     for i in range(len(psgrp_soup.list.find_all("item"))):
         psgrp_soup.list.item.decompose()
@@ -332,13 +506,44 @@ def delete_items(psgrp_soup):
 
 
 def delete_p_tags(modpr_soup, freq_type):
-    for i in range(len(modpr_soup.find_all(attrs={"name": freq_type})[0].find_all("p"))):
-        modpr_soup.find(attrs={"name": freq_type}).p.decompose()
+    freq_tags = modpr_soup.find_all(attrs={"name": freq_type})
+    for freq_tag in freq_tags:
+        for i in range(len(freq_tag.find_all("p"))):
+            modpr_soup.find(attrs={"name": freq_type}).p.decompose()
     return modpr_soup
 
 
-def add_p_tags(modpr_soup, text, freq_type):
-    original_tag = modpr_soup.find_all(attrs={"name": freq_type})[0]
+def delete_dlCarFrqEutL_item_tags(modpr_soup, parentmo=None):
+    freq_tags = modpr_soup.find_all(attrs={"name": "dlCarFrqEutL"})
+    for freq_tag in freq_tags:
+        parent_mo = str(freq_tag.find_parent(
+            "managedObject")['class'])
+        for i in range(len(freq_tag.find_all("item"))):
+            modpr_soup.find(attrs={"name": "dlCarFrqEutL"}).item.decompose()
+    return modpr_soup
+
+
+def add_dlCarFrqEutL_item_tags(modpr_soup, parentmo=None):
+    freq_tags = modpr_soup.find_all(attrs={"name": "dlCarFrqEutL"})
+    for freq in freq_tags:
+        new_tag = modpr_soup.new_tag("p")
+        freq.append(new_tag)
+        new_tag.string = str(freq)
+    return modpr_soup
+
+
+def add_p_tags(modpr_soup, text, freq_type, parent_mo=None):
+    freq_tags = modpr_soup.find_all(attrs={"name": freq_type})
+    for freq_tag in freq_tags:
+        original_tag = freq_tag
+        new_tag = modpr_soup.new_tag("p")
+        original_tag.append(new_tag)
+        new_tag.string = str(text)
+    return modpr_soup
+
+
+def add_p_tags_mopr(modpr_soup, freq_tag, text):
+    original_tag = freq_tag
     new_tag = modpr_soup.new_tag("p")
     original_tag.append(new_tag)
     new_tag.string = str(text)
@@ -434,7 +639,8 @@ def transducer_compose(soup):
         endEarfcnDl_replace_first_transducer, startEarfcnDl_replace_first_transducer, startEarfcnDl_replace_second_transducer,
         endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
         second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer, eutraCarrierFreq_b66_append_transducer,
-        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer)
+        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer, capr_transducer,
+        mopr_transducer)
     return transducer_function(soup)
 
 
@@ -443,6 +649,13 @@ def modpr_compose(modpr_soup):
                                         freqLayListLte_xducer, freqLayListSrvccWcdma_xducer, redirFreqUtra_xducer, redirFreqEutra_xducer,
                                         freqLayListPsHoWcdma_xducer)
     return modpr_function(modpr_soup)
+
+
+def mopr_compose(modr_soup):
+    mopr_function = composite_function(freqLayListServiceBasedHo_xducer, freqLayListDedLteLB_mopr_xducer,
+                                       freqLayListLte_mopr_xducer, freqLayListSrvccWcdma_mopr_xducer, redirFreqUtra_xducer, redirFreqEutra_xducer,
+                                       freqLayListPsHoWcdma_mopr_xducer)
+    return mopr_function(modr_soup)
 
 
 # composite_function accepts N
@@ -518,10 +731,59 @@ def filter_eutra_list_12(par_list):
     return col_list
 
 
+def filter_b12_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b12_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b12_max')))]
+    return col_list
+
+
+def filter_b17_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b17_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b17_max')))]
+    return col_list
+
+
+def filter_b29_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b29_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b29_max')))]
+    return col_list
+
+
+def filter_b25_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b25_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b25_max')))]
+    return col_list
+
+
 def filter_b14_list(par_list):
     int_list = filter_int_list(par_list)
     col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
         'b14_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b14_max')))]
+    return col_list
+
+
+def filter_b4_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b4_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b4_max')))]
+    return col_list
+
+
+def filter_b30_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b30_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b30_max')))]
+    return col_list
+
+
+def filter_b66_list(par_list):
+    int_list = filter_int_list(par_list)
+    col_list = [b for b in int_list if (int(st.session_state['mfbipr_map'].get(
+        'b66_min')) < int(b) < int(st.session_state['mfbipr_map'].get('b66_max')))]
     return col_list
 
 
@@ -570,23 +832,63 @@ def get_ear_value(sheet):
 
 
 def get_wcdma_value(sheet):
-    par_col = sheet["dlCarFrqUtra"]
+    par_col = sheet["UTRADownlinkFrequencyasARFCNvalue"]
     col_list = filter_int_list(par_col.to_list())
     return get_ear_return_value(col_list)
 
 
 def get_wcdma_femto_value(sheet):
-    par_col = sheet["dlCarFrqUtra_FEMTO"]
+    par_col = sheet["UTRADownlinkFrequencyasARFCNvalue"]
     col_list = filter_int_list(par_col.to_list())
     return get_ear_return_value(col_list)
 
 
-def get_freqLayListDedLteLB_value(sheet):
+def get_freqLayListDedLteLB_value(sheet, parent_mo=None):
     filt_list = get_modpr_list(sheet)
     dl_only_value = get_ear_value(sheet)
     port_value = get_port_value(sheet)
     dl_list = [b for b in filt_list if b not in [dl_only_value, port_value]]
+    if str(parent_mo).find('MOPR-5') > -1 or str(parent_mo).find('MOPR-6') > -1:
+        dl_list = get_mopr_5_6_value(sheet)
     return dl_list
+
+
+def get_dlCarFrqEutL_value(sheet, parent_mo=None):
+    filt_list = get_modpr_list(sheet)
+    dl_only_value = get_ear_value(sheet)
+    port_value = get_port_value(sheet)
+    b2_value = filter_b2_list(filt_list)
+    dl_list = [b for b in filt_list if b not in [dl_only_value, port_value]]
+    if str(parent_mo).find('MOPR-2') > -1:
+        dl_list = [b for b in filt_list if b not in [
+            dl_only_value, port_value, b2_value]]
+    if str(parent_mo).find('MOPR-5') > -1 or str(parent_mo).find('MOPR-6') > -1:
+        dl_list = get_mopr_5_6_value(sheet)
+    return dl_list
+
+
+def get_redirFreqUtra_value(sheet, parent_mo=None):
+    wcdma_value = get_wcdma_value(sheet)
+    dl_list = [wcdma_value]
+    if str(parent_mo).find('MOPR-5/MORED-1') > -1 or str(parent_mo).find('MOPR-6/MORED-1') > -1:
+        dl_list = get_mopr_5_6_mored_1_value(sheet)
+    return dl_list
+
+
+def get_mopr_5_6_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    b12_value = filter_eutra_list_12(filt_list)
+    b2_value = filter_b2_list(filt_list)
+    b4_value = filter_b4_list(filt_list)
+    b30_value = filter_b30_list(filt_list)
+    b66_value = filter_b66_list(filt_list)
+    return b12_value + b2_value + b4_value + b30_value + b66_value
+
+
+def get_mopr_5_6_mored_1_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    b2_value = filter_b2_list(filt_list)
+    return b2_value
 
 
 def get_freqLayListLte_value(sheet):
@@ -599,32 +901,54 @@ def get_freqLayListLte_value(sheet):
     return dl_list
 
 
+def get_freqLayListLte_mopr_value(sheet, parent_mo=None):
+    filt_list = get_modpr_list(sheet)
+    dl_only_value = get_ear_value(sheet)
+    port_value = get_port_value(sheet)
+    b14_value = filter_b14_list(filt_list)
+    dl_list = [b for b in filt_list if b not in [
+        dl_only_value, port_value]]
+    if str(parent_mo).find('MOPR-3') > -1 or str(parent_mo).find('MOPR-4') > -1:
+        dl_list = [b for b in filt_list if b not in [
+            dl_only_value, port_value, b14_value]]
+    if str(parent_mo).find('MOPR-5') > -1 or str(parent_mo).find('MOPR-6') > -1:
+        dl_list = get_mopr_5_6_value(sheet)
+    return dl_list
+
+
 def get_freqLayListPsHoWcdma_value(sheet):
     filt_list = get_modpr_list(sheet)
     wcdma_value = get_wcdma_value(sheet)
     wcdma_femto_value = get_wcdma_femto_value(sheet)
-    dl_list = [b for b in filt_list if b in [wcdma_femto_value, wcdma_value]]
+    dl_list = [wcdma_femto_value, wcdma_value]
     return dl_list
 
 
-def get_redirFreqUtra_value(sheet):
+def get_freqLayListPsHoWcdma_mopr_value(sheet):
     filt_list = get_modpr_list(sheet)
     wcdma_value = get_wcdma_value(sheet)
-    dl_list = [b for b in filt_list if b in [wcdma_value]]
+    dl_list = [wcdma_value]
+    return dl_list
+
+
+def get_freqLayListEndcHo_mopr_value(sheet):
+    filt_list = get_modpr_list(sheet)
+    b14_value = filter_b14_list(filt_list)
+    dl_list = [b14_value]
     return dl_list
 
 
 def get_redirFreqEutra_value(sheet):
     filt_list = get_modpr_list(sheet)
     b2_value = filter_b2_list(filt_list)
-    dl_list = [b for b in filt_list if b in [b2_value]]
+    dl_list = b2_value
     return dl_list
 
 
 def get_freqLayListServiceBasedHo_value(sheet):
     filt_list = get_modpr_list(sheet)
     b12_value = filter_eutra_list_12(filt_list)
-    dl_list = [b for b in filt_list if b in [b12_value]]
+    dl_list = b12_value
     return dl_list
 
 
@@ -649,6 +973,37 @@ def get_psgrp_value(sheet):
     epsilon = get_epsilon_values(filt_psgrp_dict)
 
     return [alpha, beta, gamma, delta, epsilon]
+
+
+def get_capr_value(sheet):
+    par_col_key = sheet["LocalcellresourceID"].to_list()[4:]
+    par_col_value = sheet["EARFCNdownlink"].to_list()[4:]
+    capr_dict = {lcrid: earfcnDL for lcrid,
+                 earfcnDL in zip(par_col_key, par_col_value)}
+    filt_capr_dict = filter_psgrp_panh(par_col_key, capr_dict)
+    return filt_capr_dict
+
+
+def get_capr_band_value(sheet):
+    par_col_key = sheet["EARFCNdownlink"].to_list()[4:]
+    par_col_key = list(set(par_col_key))
+    par_col_value = sheet["Downlinkchannelbandwidth"].to_list()[4:]
+    par_col_value = list(set(par_col_value))
+    capr_dict = {lcrid: earfcnDL for lcrid,
+                 earfcnDL in zip(par_col_key, par_col_value)}
+    return capr_dict
+
+
+def is_low_band(freq):
+    return (len(filter_b12_list([freq]) + filter_b17_list([freq]) + filter_b29_list([freq])) > 0)
+
+
+def is_high_band(freq):
+    return (len(filter_b30_list([freq])) > 0)
+
+
+def is_medium_band(freq):
+    return (len(filter_b2_list([freq]) + filter_b4_list([freq]) + filter_b25_list([freq]) + filter_eutra_list_66([freq])) > 0)
 
 
 def get_modpr_list(sheet):
@@ -725,7 +1080,7 @@ def return_item(i):
 
 
 def filter_psgrp_panh(par_col_key, psgrp_dict):
-    key_list = st.session_state['psgrp_filter']
+    key_list = st.session_state['5G_filter']
     filt_set = set(key_list)
     lcrid = set(par_col_key)
     filt_lcrid = [x for x in lcrid if x not in filt_set]
@@ -776,8 +1131,16 @@ def app():
                                            'port_matrix_min': 66436, 'port_matrix_max': 67335}
     st.session_state['mfbipr_map'] = {'b12_min': 5010, 'b12_max': 5179,
                                       'b17_min': 5730, 'b17_max': 5849, 'b66_min': 66436, 'b66_max': 67335,
-                                      'b14_min': 5280, 'b14_max': 5379, 'b2_min': 600, 'b2_max': 800}
+                                      'b14_min': 5280, 'b14_max': 5379, 'b2_min': 600, 'b2_max': 800,
+                                      'b4_min': 1950, 'b4_max': 2399, 'b30_min': 9770, 'b30_max': 9869,
+                                      'b29_min': 9660, 'b29_max': 9769, 'b25_min': 825, 'b25_max': 1100}
     st.session_state['psgrp_filter'] = [25, 49, 72, 73, 193, 194, 195]
+    st.session_state['5G_filter'] = [25, 49, 72, 73]
+    st.sesssion_state['freq_prio_medium_band'] = {
+        '5mhz': 8, '15mhz': 3, '20mhz': 3, '10mhz': 5}
+    st.sesssion_state['freq_prio_low_band'] = {
+        '5mhz': 9, '10mhz': 7}
+    st.sesssion_state['freq_high_medium_band'] = 10
     # MFBIPR-B66
     st.session_state['mfbipr_66'] = BeautifulSoup(
         xml_templates.return_xml('MFBIPR-B66'), "xml")
@@ -789,6 +1152,10 @@ def app():
         xml_templates.return_xml('PSGRP'), "xml")
     st.session_state['MODPR'] = BeautifulSoup(
         xml_templates.return_xml('MODPR'), "xml")
+    st.session_state['MOPR'] = BeautifulSoup(
+        xml_templates.return_xml('MOPR'), "xml")
+    st.session_state['CAPR'] = BeautifulSoup(
+        xml_templates.return_xml('CAPR'), "xml")
     st.session_state['root_xml'] = BeautifulSoup(
         xml_templates.return_xml(), "xml")
 

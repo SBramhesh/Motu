@@ -419,10 +419,18 @@ def psgrp_transducer(soup):
 
 
 def capr_transducer(soup):
-    psgrp_soup_list = capr_xducer(st.session_state['CAPR'])
+    capr_soup_list = capr_xducer(st.session_state['CAPR'])
     cmData_tag = soup.cmData
-    for p_soup in psgrp_soup_list:
-        cmData_tag.append(p_soup)
+    for c_soup in capr_soup_list:
+        cmData_tag.append(c_soup)
+    return soup
+
+
+def carel_transducer(soup):
+    carel_soup_list = carel_xducer(st.session_state['CAPR'])
+    cmData_tag = soup.cmData
+    for c_soup in carel_soup_list:
+        cmData_tag.append(c_soup)
     return soup
 
 
@@ -454,10 +462,36 @@ def capr_xducer(capr_soup):
         st.session_state['ciq_cell_par'])
     capr_list = []
     for lcrid in capr_dict.keys():
-        for earfcnDl in capr_band_dict.keys():
+        for earfcnDl in capr_band_dict.keys().remove(capr_dict[lcrid]):
             new_capr_soup = process_capr_soup(capr_soup, lcrid, earfcnDl)
             capr_list.append(new_capr_soup)
     return list(filter(lambda x: x != 'nan', capr_list))
+
+
+def carel_xducer(carel_soup):
+    carel_list = get_carel_value(
+        st.session_state['ciq_cell_par'])
+    carrel_list = []
+    for l in carel_list:
+        greek_list = return_greek_list(l[0])
+        for index, _ in enumerate(greek_list):
+            new_carel_soup = process_carel_soup(
+                carel_soup, index, greek_list, l)
+            carrel_list.append(new_carel_soup)
+    return list(filter(lambda x: x != 'nan', carrel_list))
+
+
+def return_greek_list(lcrid):
+    alpha_list = [x[1] for x in st.session_state['band_cell_mapping']['alpha']]
+    alpha_list = [int(i) for i in alpha_list]
+    # alpha_list = list(map(int, alpha_list))
+    beta_list = [i+1 for i in alpha_list]
+    gamma_list = [i+2 for i in alpha_list]
+    delta_list = [i+3 for i in alpha_list]
+    epsilon_list = [i+4 for i in alpha_list]
+    for g in [alpha_list, beta_list, gamma_list, delta_list, epsilon_list]:
+        if lcrid in g:
+            return g.remove(lcrid)
 
 
 def process_capr_soup(kapr_soup, lcrid, earfcnDl):
@@ -467,6 +501,23 @@ def process_capr_soup(kapr_soup, lcrid, earfcnDl):
         dist_array[0], dist_array[1], "LNCEL-" + lcrid, "CAPR-" + earfcnDl])
     kapr_soup = process_resprio(kapr_soup, get_resprio_val(earfcnDl))
     kapr_soup = process_enableA3Event(kapr_soup, earfcnDl)
+    return kapr_soup
+
+
+def process_carel_soup(kapr_soup, carel_index, greek_list, carel_tuple):
+    lcrid = carel_tuple[0]
+    dist_string = kapr_soup.managedObject['distName']
+    dist_array = dist_string.split('/')
+    kapr_soup.managedObject['distName'] = '/'.join([
+        dist_array[0], dist_array[1], "LNCEL-" + lcrid, "CAREL-" + carel_index])
+    lnbts_tags = kapr_soup.find_all(attrs={"name": "lnBtsId"})
+    for freq_tag in lnbts_tags:
+        freq_tag.string = get_ciq_value(
+            "mrbtsId", st.session_state['ciq_sitemain_par'])
+    lcrid_tags = kapr_soup.find_all(attrs={"name": "lcrId"})
+    for freq_tag in lcrid_tags:
+        freq_tag.string = greek_list[carel_index]
+    kapr_soup = process_mimo(kapr_soup, carel_tuple)
     return kapr_soup
 
 
@@ -496,6 +547,13 @@ def process_enableA3Event(kapr_soup, earfcnDl):
     freq_tags = kapr_soup.find_all(attrs={"name": "enableA3Event"})
     for freq_tag in freq_tags:
         freq_tag.string = enable_A3Event_val
+    return kapr_soup
+
+
+def process_mimo(kapr_soup, carel_tuple):
+    mimo_tags = kapr_soup.find_all(attrs={"name": "maxNumOfSuppMimoLayer"})
+    for freq_tag in mimo_tags:
+        freq_tag.string = st.session_state['dlMimoMode'][carel_tuple[3]]
     return kapr_soup
 
 
@@ -639,7 +697,7 @@ def transducer_compose(soup):
         endEarfcnDl_replace_first_transducer, startEarfcnDl_replace_first_transducer, startEarfcnDl_replace_second_transducer,
         endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
         second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer, eutraCarrierFreq_b66_append_transducer,
-        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer, capr_transducer,
+        eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer, capr_transducer, carel_transducer,
         mopr_transducer)
     return transducer_function(soup)
 
@@ -983,6 +1041,16 @@ def get_capr_value(sheet):
     filt_capr_dict = filter_psgrp_panh(par_col_key, capr_dict)
     return filt_capr_dict
 
+# DownlinkMIMOmode
+
+
+def get_carel_value(sheet):
+    par_col_lcrid = sheet["LocalcellresourceID"].to_list()[4:]
+    par_col_cell = sheet["Cellname"].to_list()[4:]
+    par_col_ear = sheet["EARFCNdownlink"].to_list()[4:]
+    par_col_mimo = sheet["DownlinkMIMOmode"].to_list()[4:]
+    return filter_out_panh_and_dl_only(zip(par_col_lcrid, par_col_cell, par_col_ear, par_col_mimo))
+
 
 def get_capr_band_value(sheet):
     par_col_key = sheet["EARFCNdownlink"].to_list()[4:]
@@ -1091,6 +1159,17 @@ def filter_psgrp_panh(par_col_key, psgrp_dict):
             in zip(filt_vals, filt_lcrid)}
 
 
+def filter_out_panh_and_dl_only(lcrid_list):
+    key_list = st.session_state['5G_filter']
+    filt_set = set(key_list)
+    lcrid = set(lcrid_list)
+    return [x for x in lcrid if x[0] not in filt_set and is_not_dl_only(x[2])]
+
+
+def is_not_dl_only(freq):
+    return len(filter_ear_list([freq]) + filter_port_list([freq])) > 0
+
+
 def filter_modpr_panh(par_col_key, modpr_dict):
     key_list = st.session_state['psgrp_filter']
     filt_set = set(key_list)
@@ -1134,6 +1213,24 @@ def app():
                                       'b14_min': 5280, 'b14_max': 5379, 'b2_min': 600, 'b2_max': 800,
                                       'b4_min': 1950, 'b4_max': 2399, 'b30_min': 9770, 'b30_max': 9869,
                                       'b29_min': 9660, 'b29_max': 9769, 'b25_min': 825, 'b25_max': 1100}
+    st.session_state['band_cell_mapping'] = {'alpha': [('B12', 15, '_7A_1'), ('B2', 8, '_9A_1'), ('B4', 22, '_2A_1'),
+                                                       ('B30', 149, '_3A_1'), ('B29', 172, '_7A_2_E'), (
+                                                           'B25', 179, '_9A_2'), ('B14', 193, '_7A_3_F'),
+                                                       ('B66', 186, '_2A_2'), ('B2_C2', 200, '_9A_3'), ], }
+    st.session_state['dlMimoMode'] = {'SingleTX':	0,
+                                      'TXDiv':	0,
+                                      '4-way TXDiv':	0,
+                                      'Dynamic Open Loop MIMO':	'2-layer',
+                                      'Closed Loop Mimo':	'2-layer',
+                                      'Closed Loop MIMO (4x2)':	'2-layer',
+                                      'Closed Loop MIMO (8x2)':	'2-layer',
+                                      'Closed Loop MIMO (4x4)':	'4-layer',
+                                      'Closed Loop MIMO (8x4)':	'4-layer',
+                                      'Closed Loop MIMO (16x2)':	'2-layer'}
+
+    st.session_state['mrbts_id'] = get_ciq_value(
+        "mrbtsId", st.session_state['ciq_sitemain_par'])
+
     st.session_state['psgrp_filter'] = [25, 49, 72, 73, 193, 194, 195]
     st.session_state['5G_filter'] = [25, 49, 72, 73]
     st.sesssion_state['freq_prio_medium_band'] = {
@@ -1156,6 +1253,8 @@ def app():
         xml_templates.return_xml('MOPR'), "xml")
     st.session_state['CAPR'] = BeautifulSoup(
         xml_templates.return_xml('CAPR'), "xml")
+    st.session_state['CAREL'] = BeautifulSoup(
+        xml_templates.return_xml('CAREL'), "xml")
     st.session_state['root_xml'] = BeautifulSoup(
         xml_templates.return_xml(), "xml")
 

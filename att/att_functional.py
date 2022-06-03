@@ -434,6 +434,14 @@ def carel_transducer(soup):
     return soup
 
 
+def amlepr_transducer(soup):
+    amlepr_soup_list = amlepr_xducer(st.session_state['AMLEPR'])
+    cmData_tag = soup.cmData
+    for c_soup in amlepr_soup_list:
+        cmData_tag.append(c_soup)
+    return soup
+
+
 def modpr_transducer(soup):
     processed_modpr = modpr_compose(st.session_state['MODPR'])
     cmData_tag = soup.cmData
@@ -481,6 +489,20 @@ def carel_xducer(carel_soup):
     return list(filter(lambda x: x != 'nan', carrel_list))
 
 
+def amlepr_xducer(aml_soup):
+    aml_dict = get_capr_value(
+        st.session_state['ciq_cell_par'])
+    aml_band_dict = get_amlepr_band_value(
+        st.session_state['ciq_cell_par'])
+    aml_list = []
+    for lcrid in aml_dict.keys():
+        for index, earfcnDl in enumerate(aml_band_dict.keys().remove(aml_dict[lcrid])):
+            new_aml_soup = process_amlepr_soup(
+                aml_soup, lcrid, earfcnDl, index, aml_dict[lcrid])
+            aml_list.append(new_aml_soup)
+    return list(filter(lambda x: x != 'nan', aml_list))
+
+
 def return_greek_list(lcrid):
     alpha_list = [x[1] for x in st.session_state['band_cell_mapping']['alpha']]
     alpha_list = [int(i) for i in alpha_list]
@@ -501,6 +523,64 @@ def process_capr_soup(kapr_soup, lcrid, earfcnDl):
         dist_array[0], dist_array[1], "LNCEL-" + lcrid, "CAPR-" + earfcnDl])
     kapr_soup = process_resprio(kapr_soup, get_resprio_val(earfcnDl))
     kapr_soup = process_enableA3Event(kapr_soup, earfcnDl)
+    return kapr_soup
+
+
+def process_amlepr_soup(kapr_soup, lcrid, earfcnDl, index, fcnDl):
+    dist_string = kapr_soup.managedObject['distName']
+    dist_array = dist_string.split('/')
+    kapr_soup.managedObject['distName'] = '/'.join([
+        dist_array[0], dist_array[1], "LNCEL-" + lcrid, "AMLEPR-" + index])
+
+    tgt_tags = kapr_soup.find_all(attrs={"name": "targetCarrierFreq"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = earfcnDl
+    kapr_soup = process_amlepr_cac(kapr_soup, earfcnDl, fcnDl)
+    return kapr_soup
+
+
+def process_amlepr_cac(amlo_soup, earfcnDl, fcnDl):
+    if is_first_net(earfcnDl):
+        if is_low_band(fcnDl):
+            amlo_soup = set_cac_values(
+                st.session_state['amlepr']['FirstNet']['LB'])
+        elif is_first_net(fcnDl):
+            amlo_soup = set_cac_values(
+                st.session_state['amlepr']['FirstNet']['FirstNet'])
+        else:
+            amlo_soup = set_cac_values(
+                st.session_state['amlepr']['FirstNet']['MB/HB'])
+    else:
+        amlo_soup = set_cac_values(st.session_state['amlepr']['Default'])
+
+    return amlo_soup
+
+
+def set_cac_values(amll_soup, value_dict):
+    amll_soup = set_cac_head(amll_soup, value_dict['cacHeadroom'])
+    amll_soup = set_max_cac(amll_soup, value_dict['maxCacThreshold'])
+    amll_soup = set_target_car(amll_soup, value_dict['targetCarrierFreq'])
+    return amll_soup
+
+
+def set_cac_head(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "cacHeadroom"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
+
+
+def set_max_cac(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "maxCacThreshold"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
+
+
+def set_target_car(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "targetCarrierFreq"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
     return kapr_soup
 
 
@@ -698,7 +778,7 @@ def transducer_compose(soup):
         endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
         second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer, eutraCarrierFreq_b66_append_transducer,
         eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer, capr_transducer, carel_transducer,
-        mopr_transducer)
+        mopr_transducer, amlepr_transducer)
     return transducer_function(soup)
 
 
@@ -1052,7 +1132,23 @@ def get_carel_value(sheet):
     return filter_out_panh_and_dl_only(zip(par_col_lcrid, par_col_cell, par_col_ear, par_col_mimo))
 
 
+def get_amlepr_value(sheet):
+    par_col_lcrid = sheet["LocalcellresourceID"].to_list()[4:]
+    par_col_ear = sheet["EARFCNdownlink"].to_list()[4:]
+    return filter_out_panh_and_dl_only(zip(par_col_lcrid, par_col_ear))
+
+
 def get_capr_band_value(sheet):
+    par_col_key = sheet["EARFCNdownlink"].to_list()[4:]
+    par_col_key = list(set(par_col_key))
+    par_col_value = sheet["Downlinkchannelbandwidth"].to_list()[4:]
+    par_col_value = list(set(par_col_value))
+    capr_dict = {lcrid: earfcnDL for lcrid,
+                 earfcnDL in zip(par_col_key, par_col_value)}
+    return capr_dict
+
+
+def get_amlepr_band_value(sheet):
     par_col_key = sheet["EARFCNdownlink"].to_list()[4:]
     par_col_key = list(set(par_col_key))
     par_col_value = sheet["Downlinkchannelbandwidth"].to_list()[4:]
@@ -1068,6 +1164,10 @@ def is_low_band(freq):
 
 def is_high_band(freq):
     return (len(filter_b30_list([freq])) > 0)
+
+
+def is_first_net(freq):
+    return (len(filter_b14_list([freq])) > 0)
 
 
 def is_medium_band(freq):
@@ -1227,6 +1327,33 @@ def app():
                                       'Closed Loop MIMO (4x4)':	'4-layer',
                                       'Closed Loop MIMO (8x4)':	'4-layer',
                                       'Closed Loop MIMO (16x2)':	'2-layer'}
+
+    st.session_state['amlepr'] = {'FirstNet': {
+        'FirstNet': {
+            'cacHeadroom': 100,
+            'maxCacThreshold':  40,
+            'deltaCac': 15
+        },
+        'LB': {
+            {
+                'cacHeadroom': 0,
+                'maxCacThreshold':  80,
+                'deltaCac': 0
+            }
+        },
+        'MB/HB': {
+            'cacHeadroom': 0,
+            'maxCacThreshold':  60,
+            'deltaCac': 0
+        }
+
+    },
+        'Default': {
+        'cacHeadroom': 40,
+        'maxCacThreshold':  40,
+        'deltaCac': 15
+    }
+    }
 
     st.session_state['mrbts_id'] = get_ciq_value(
         "mrbtsId", st.session_state['ciq_sitemain_par'])

@@ -76,16 +76,16 @@ def return_dict():
     return xml_dict
 
 
-# ttl_path = 'nokia\\templates.ttl'
+ttl_path = 'nokia\\templates.ttl'
 
 
-# def return_dict():
-#     g_read = Graph()
-#     g_read.parse(ttl_path)
-#     for s, p, o in g_read.triples((None,  RDF.XMLLiteral, None)):
-#         print(f"{s} is a.....{o}")
-#         xml_dict[s.split('/')[-1]] = str(0)
-#     return xml_dict
+def return_dict():
+    g_read = Graph()
+    g_read.parse(ttl_path)
+    for s, p, o in g_read.triples((None,  RDF.XMLLiteral, None)):
+        print(f"{s} is a.....{o}")
+        xml_dict[s.split('/')[-1]] = str(0)
+    return xml_dict
 
 
 # def return_par_dict():

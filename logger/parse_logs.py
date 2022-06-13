@@ -354,7 +354,7 @@ def get_mmbb_lte_traffic(string_data, node_name):
             else:
                 c_list.append(" ")
         else:
-            c_list.append(0)
+            c_list.append('0')
     df_mtraf['CellId'] = c_list
 
     ue_list = []
@@ -367,7 +367,7 @@ def get_mmbb_lte_traffic(string_data, node_name):
     for index, item in enumerate(df_mapp['CellId']):
         ue_dict[int(item)] = [df_mapp['#UE:s'][index+1],
                               df_mapp['#Bearers'][index+1]]
-    ue_dict.keys()
+    # ue_dict.keys()
 
     for i in list(df_mtraf['CellId']):
         if i in ue_dict:
@@ -465,6 +465,11 @@ def get_inv_prod_df(string_data, node_name):
             table_list = entry.split(split_str)[1].split('----------------')[0]
     lte_list = split_str + "".join(table_list)
     df_invx_prod = pd.read_csv(StringIO(lte_list.strip()),   sep=';', header=0)
+    df_invx_prod.columns = [x.strip() for x in df_invx_prod.columns.to_list()]
+    df_invx_prod['DATE1'] = pd.to_datetime(
+        df_invx_prod['DATE1'], format='%Y%m%d')
+    df_invx_prod['DATE2'] = pd.to_datetime(
+        df_invx_prod['DATE2'], format='%Y%m%d')
     return df_invx_prod.iloc[1:, :]
 
 
@@ -511,6 +516,7 @@ def get_asm_df(string_data, node_name):
     for row in tte_list:
         f_list.append([x for x in row.split(' ')if len(x) > 0])
     df_asm = pd.DataFrame(f_list)
+    # head_list = [x[2:-3] for x in f_list[0]]
 
     df_asm.columns = f_list[0]
     df_asmm = df_asm.iloc[1:, : -2]
@@ -788,289 +794,6 @@ def remove_bracket(list):
     return new_l
 
 
-def get_vswr_table(string_data):
-    regexp_rtwp = re.compile(r'RTWP')
-    regexp_vswr = re.compile(r'VSWR')
-    text_vswr = ""
-    if string_data.find('VSWR') != -1:
-        if regexp_rtwp.search(string_data):
-            print(string_data.split(r'VSWR TABLE:')[1].split(r'RTWP TABLE')[0])
-            text_vswr = string_data.split(r'VSWR TABLE:')[
-                1].split(r'RTWP TABLE')[0]
-        else:
-            print(string_data.split(r'VSWR TABLE:')
-                  [1].split(r'CLI PARSING')[0])
-            text_vswr = string_data.split(r'VSWR TABLE:')[
-                1].split(r'CLI PARSING')[0]
-    return text_vswr
-
-
-def get_no_vswr_table(string_data):
-    regexp_1 = re.compile(r'CLI PARSING: STARTED:')
-    regexp_2 = re.compile(r'LNCEL_ID')
-
-    text_novswr = ""
-
-    if regexp_1.search(string_data):
-        print(string_data.split(r'CLI PARSING: STARTED:')[
-              0].split(r'LNCEL_ID')[1].split(r'RM_EXID_CONF ')[0])
-        text_novswr = string_data.split(r'CLI PARSING: STARTED:')[0].split(
-            r'LNCEL_ID')[1].split(r'RM_EXID_CONF ')[0]
-
-    return text_novswr
-
-
-def get_first_table_df(textt):
-    ddfn = pd.read_csv(StringIO(textt.strip()),
-                       sep='|', skiprows=2, header=None)
-    # dffs2 = pd.read_csv(StringIO(d.strip()), delim_whitespace=True, header=None)
-    dffn = ddfn.iloc[:, 1:].dropna(thresh=3)
-    dffn = dffn.iloc[:, :-1]
-    # # st.sidebar.write(dffn)
-    # # st.sidebar.write(len(dffn.index))
-    # dffn= dffn.iloc[:,4:9]
-    dffn = dffn.iloc[:, [4, 5, 7, 8]].copy()
-    dffn.columns = ['Bandwidth', 'BBMOD', 'RMOD_ID', 'RMOD']
-    return dffn, len(dffn.index)
-
-
-def get_no_vswr_df(text_novswr):
-    ddfnvswr = pd.read_csv(StringIO(text_novswr.strip()),
-                           sep='|', skiprows=2, header=None)
-    ddfnvswr = ddfnvswr.iloc[:, 1: -1]
-    ddfnvswr = ddfnvswr.dropna(thresh=3)
-    columns = [2, 7]
-    ddfnn1 = pd.DataFrame(ddfnvswr, columns=columns)
-    ddfnn1.columns = ['CELL', 'LNCEL_ID']
-    ddfnn1['LNCEL_ID'] = ddfnn1['LNCEL_ID'].astype(int)
-    lncel_list = list(ddfnn1['LNCEL_ID'].astype(int))
-    lnid_list = [f"LNCEL-{str(x)}" for x in lncel_list if not str(x) == "nan"]
-    print(lnid_list)
-    ddfnn1['LNCEL_ID'] = lnid_list
-    ddfnn1['VSWR_BRANCH_1'] = np.nan
-    ddfnn1['VSWR_BRANCH_2'] = np.nan
-    ddfnn1['VSWR_BRANCH_3'] = np.nan
-    ddfnn1['VSWR_BRANCH_4'] = np.nan
-    return ddfnn1
-
-
-def get_vswr_df(textv):
-    ddfnv = pd.read_csv(StringIO(textv.strip()),   sep='|', header=1)
-    # dffs2 = pd.read_csv(StringIO(d.strip()), delim_whitespace=True, header=None)
-    ddfnv = ddfnv.iloc[:, 1:].dropna(thresh=3)
-    ddfnv = ddfnv.iloc[:, :-1]
-    print(ddfnv.shape)
-    ddfnv.head(50)
-    print(ddfnv.columns)
-    ddfnv.columns = ddfnv.columns.str.strip()
-    cxlist = ddfnv['LNCEL'].unique().tolist()
-    print(cxlist)
-    cleancxlist = [x for x in cxlist if str(x) != 'LNCEL']
-    # print(f"cleancxlist..{cleancxlist}")
-    grouped = ddfnv.groupby('LNCEL')
-    vswr_branch_1 = []
-    vswr_branch_2 = []
-    vswr_branch_3 = []
-    vswr_branch_4 = []
-    lncel_list = []
-    cell_list = []
-    for i in cleancxlist:
-        dff = grouped.get_group(i)
-        print(f"dff is..{dff}")
-        print(dff.columns)
-        print(f"CELL ID is..{dff['LNCEL']}")
-        vswr_list = dff['VSWR'].to_list()
-        lncell_list = dff['LNCELID'].to_list()
-        celll_list = dff['LNCEL'].to_list()
-        print(f"vswr list is..{vswr_list}")
-        print(f"lncl list is..{lncell_list}")
-        print(f"celll_list is.. {celll_list}")
-        vswr_branch_1.append(vswr_list[0])
-        vswr_branch_2.append(vswr_list[1])
-        if len(vswr_list) > 2:
-            vswr_branch_3.append(vswr_list[2])
-            vswr_branch_4.append(vswr_list[3])
-        else:
-            vswr_branch_3.append(0)
-            vswr_branch_4.append(0)
-
-        lncel_list.append(lncell_list[0])
-        cell_list.append(celll_list[0])
-
-    print(f"vswr_branch_1 is.. {vswr_branch_1}")
-    print(f"vswr_branch_2 is.. {vswr_branch_2}")
-    print(f"vswr_branch_3 is.. {vswr_branch_3}")
-    print(f"vswr_branch_4 is.. {vswr_branch_4}")
-    print(f"lncel_list is.. {lncel_list}")
-    print(f"cell_list is.. {cell_list}")
-
-    data = {'CELL': cell_list, 'LNCEL_ID': lncel_list,   'VSWR_BRANCH_1': vswr_branch_1,
-            'VSWR_BRANCH_2': vswr_branch_2, 'VSWR_BRANCH_3': vswr_branch_3, 'VSWR_BRANCH_4': vswr_branch_4}
-    df_vswr = pd.DataFrame(data)
-    # # st.sidebar.write(df_vswr)
-    return df_vswr
-
-
-def get_rssi_table1(string_data):
-
-    regexp_v1 = re.compile(r'CLI PARSING: COMPLETED:')
-    regexp_v2 = re.compile(r'CLI PARSING: STARTED:')
-    if regexp_v1.search(string_data):
-        print(string_data.split(r'CLI PARSING: COMPLETED:')[
-            1].split(r'RSSI_ANT_1')[1].split(r'DL_Vol(MBs)')[0])
-        textr1 = string_data.split(r'CLI PARSING: COMPLETED:')[1].split(
-            r'RSSI_ANT_1')[1].split(r'DL_Vol(MBs)')[0]
-    elif regexp_v2.search(string_data):
-        print(string_data.split(r'CLI PARSING: STARTED:')[
-            1].split(r'RSSI_ANT_1')[1].split(r'DL_Vol(MBs)')[0])
-        textr1 = string_data.split(r'CLI PARSING: STARTED:')[1].split(
-            r'RSSI_ANT_1')[1].split(r'DL_Vol(MBs)')[0]
-    return textr1
-
-
-def get_rssi_table2(string_data):
-
-    regexp_v1 = re.compile(r'CLI PARSING: COMPLETED:')
-    regexp_v2 = re.compile(r'CLI PARSING: STARTED:')
-    if regexp_v1.search(string_data):
-        print(string_data.split(r'CLI PARSING: COMPLETED:')[
-            1].split(r'RSSI_ANT_1')[2])
-        textr2 = string_data.split(r'CLI PARSING: COMPLETED:')[
-            1].split(r'RSSI_ANT_1')[2]
-    elif regexp_v2.search(string_data):
-        print(string_data.split(r'CLI PARSING: STARTED:')[
-            1].split(r'RSSI_ANT_1')[2])
-        textr2 = string_data.split(r'CLI PARSING: STARTED:')[
-            1].split(r'RSSI_ANT_1')[2]
-    return textr2
-
-
-def get_rrsi_df1(textr):
-    ddf_nrr = pd.read_csv(StringIO(textr.strip()),
-                          sep='|', skiprows=2,  header=None)
-    # dffs2 = pd.read_csv(StringIO(d.strip()), delim_whitespace=True, header=None)
-    ddf_nrr = ddf_nrr.iloc[:, 1:].dropna(thresh=3)
-    ddf_nrr = ddf_nrr.iloc[: -1, :-5]
-    for i in range(5, 9):
-        ddf_nrr.iloc[:, i] = pd.to_numeric(
-            ddf_nrr.iloc[:, i], errors='coerce').fillna(0).astype('float')
-    ddf_nrr = ddf_nrr.iloc[:, 4:]
-    return ddf_nrr
-
-
-rssi_time = ""
-rssi_date = ""
-
-
-def get_combined_rssi_df(textr2, ddf_nrr):
-    ddfnr1 = pd.read_csv(StringIO(textr2.strip()),
-                         sep='|', skiprows=2,  header=None)
-    # dffs2 = pd.read_csv(StringIO(d.strip()), delim_whitespace=True, header=None)
-    ddfnr1 = ddfnr1.iloc[:, 1:].dropna(thresh=3)
-    ddfnr1 = ddfnr1.iloc[:, :-5]
-    for i in range(5, 9):
-        ddfnr1.iloc[:, i] = pd.to_numeric(
-            ddfnr1.iloc[:, i], errors='coerce').fillna(0).astype('float')
-    print(ddfnr1.shape)
-    rssi_time = ddfnr1.iloc[0, 1]
-    # # st.sidebar.write(f"time is ..{rssi_time}")
-    rssi_date = ddfnr1.iloc[0, 0]
-    # # st.sidebar.write(f"Date is ..{rssi_date}")
-    ddfnr1 = ddfnr1.iloc[:, 4:]
-    # ddfnr1
-
-    deff = pd.concat([ddfnr1, ddf_nrr])
-    # # st.sidebar.write(deff)
-    deff = deff.replace(0, np.NaN)
-    # # st.sidebar.write(deff)
-
-    # deff
-    print(f"{deff.columns.tolist()}")
-
-    # ddfnr1.combine(ddf_nrr, np.sum)
-    # ddf_comb = pd.concat([ddfnr1, ddf_nrr]).groupby(ddf_comb.columns.tolist()[:5]).mean()
-    # df = pd.concat([df1, df2]).groupby(df.columns.tolist()[1:4]).mean()
-    # print(deff.loc['5'])
-    deff.columns = ['CELL', 'RSSI_BRANCH_1',
-                    'RSSI_BRANCH_2', 'RSSI_BRANCH_3', 'RSSI_BRANCH_4']
-    # deff['CELL'] = deff['CELL1']
-    deff = deff.groupby('CELL').mean()
-    deff.reset_index(inplace=True)
-    deff = deff.rename(columns={'index': 'CELL'})
-    # deff['DiversityImbalance'] = (deff.max(axis=1) - deff.min(axis=1))
-    Row_list = []
-    # Iterate over each row
-    for index, rows in deff.iterrows():
-        # Create list for the current row
-        my_list = [rows.RSSI_BRANCH_1, rows.RSSI_BRANCH_2,
-                   rows.RSSI_BRANCH_3, rows.RSSI_BRANCH_4]
-    #     my_list = np.min(my_list[np.nonzero(my_list)])
-        # # st.sidebar.write(deff.columns)
-        my_list = [i for i in my_list if i != 0]
-        if not my_list:
-            diff_my_list = np.nan
-        else:
-            print(f"my_list,, {my_list}")
-            diff_my_list = np.around(min(my_list) - max(my_list), 2)
-            print(f"diff is ..{diff_my_list}")
-            # append the list to the final list
-        Row_list.append(diff_my_list)
-    # Print the list
-    print(Row_list)
-
-    deff['DiversityImbalance'] = Row_list
-    print(deff.columns)
-    print(f"max ")
-    return deff, rssi_date, rssi_time
-
-
-def rssi_na(ddfnr):
-    rssi_list_4 = []
-    rssi_list_3 = []
-    rssi_list_2 = []
-    rssi_list_1 = []
-    for index, rows in ddfnr.iterrows():
-        # # st.sidebar.write(rows.Bandwidth)
-        if not rows.Bandwidth.__contains__("MHz"):
-            rssi_list_4.append(np.nan)
-            rssi_list_3.append(np.nan)
-            rssi_list_2.append(np.nan)
-            rssi_list_1.append(np.nan)
-        else:
-            rssi_list_4.append(rows.RSSI_BRANCH_4)
-            rssi_list_3.append(rows.RSSI_BRANCH_3)
-            rssi_list_2.append(rows.RSSI_BRANCH_2)
-            rssi_list_1.append(rows.RSSI_BRANCH_1)
-        # # st.sidebar.write(rssi_list_4)
-    rssi_list_4 = [np.nan if x == 0 else x for x in rssi_list_4]
-    rssi_list_3 = [np.nan if x == 0 else x for x in rssi_list_3]
-    rssi_list_2 = [np.nan if x == 0 else x for x in rssi_list_2]
-    rssi_list_1 = [np.nan if x == 0 else x for x in rssi_list_1]
-    ddfnr["RSSI_BRANCH_4"] = rssi_list_4
-    ddfnr["RSSI_BRANCH_3"] = rssi_list_3
-    ddfnr["RSSI_BRANCH_2"] = rssi_list_2
-    ddfnr["RSSI_BRANCH_1"] = rssi_list_1
-    # st.sidebar.table(ddfnr)
-
-    return ddfnr
-
-
-def get_final_df(deff, dffn, df_vswr):
-    ddfnr = deff.join(dffn)
-    ddfnr = ddfnr.merge(df_vswr, on='CELL', how='inner')
-    print(ddfnr.columns)
-    ddfnr = ddfnr.reindex(columns=['CELL', 'LNCEL_ID',  'BBMOD', 'Bandwidth', 'RMOD', 'RMOD_ID',  'RSSI_BRANCH_1', 'RSSI_BRANCH_2', 'RSSI_BRANCH_3',
-                                   'RSSI_BRANCH_4',  'DiversityImbalance', 'VSWR_BRANCH_1', 'VSWR_BRANCH_2', 'VSWR_BRANCH_3',
-                                   'VSWR_BRANCH_4'])
-    print(ddfnr.shape)
-    # df_style = ddfnr.style.hide_index()
-    # deff['DiversityImbalance'] = (deff.max(axis=1) - deff.min(axis=1))
-    ddfnr = ddfnr[ddfnr["CELL"].str.contains("_I") == False]
-    ddfnr['DiversityImbalance'].round(decimals=2)
-    # ~df.C.str.contains("XYZ")
-    return rssi_na(ddfnr)
-
-
 def get_rssi_bandwidth(deff):
     Five_list = []
     Ten_list = []
@@ -1209,39 +932,55 @@ def app():
             # # st.sidebar.write(string_data)
 
             df_pre_cell = get_pre_cell_df(string_data, node_name)
-            st.write('Pre Cell State LTE')
+            # st.write('Pre Cell State LTE')
+            st.write(
+                f"**Pre Cell State LTE**: :point_down:")
             st.table(df_pre_cell)
 
             df_pre_cell_nr = get_pre_cell_df_nr(string_data, node_name)
-            st.write('Pre Cell State NR')
+            st.write(
+                f"**Pre Cell State NR**: :point_down:")
+            # st.write('Pre Cell State NR')
             st.table(df_pre_cell_nr)
 
             df_configuration = get_mmbb_configuration_df(
                 string_data, node_name)
-            st.write('Cell Configuration')
+            # st.write('Cell Configuration')
+            st.write(
+                f"**Cell Configuration**: :point_down:")
             st.table(df_configuration)
             df_car = get_lte_car_df(string_data, node_name)
             # st.write('LTE CAR')
             # st.table(df_car)
 
             df_cs = get_cell_state_df_lte(string_data, node_name)
-            st.write('MMBB:CELL_STATE LTE')
+            # st.write('MMBB:CELL_STATE LTE')
+            st.write(
+                f"**MMBB:CELL_STATE LTE**: :point_down:")
             st.table(df_cs)
 
             nr_cs = get_cell_state_df_nr(string_data, node_name)
-            st.write('MMBB:CELL_STATE NR')
+            # st.write('MMBB:CELL_STATE NR')
+            st.write(
+                f"**MMBB:CELL_STATE NR**: :point_down:")
             st.table(nr_cs)
 
             df_inv = get_mmbb_invx_cell_df(string_data, node_name)
-            st.write('MMBB:INVX CELL')
+            # st.write('MMBB:INVX CELL')
+            st.write(
+                f"**MMBB:INVX CELL**: :point_down:")
             st.table(df_inv)
 
             df_ltraf = get_mmbb_lte_traffic(string_data, node_name)
-            st.write('MMBB:LTE TRAFFIC')
+            # st.write('MMBB:LTE TRAFFIC')
+            st.write(
+                f"**MMBB:LTE TRAFFIC**: :point_down:")
             st.table(df_ltraf)
 
             df_al = get_mmbb_ext_alarm(string_data, node_name)
-            st.write('MMBB:EXTERNAL ALARM PORT')
+            # st.write('MMBB:EXTERNAL ALARM PORT')
+            st.write(
+                f"**MMBB:EXTERNAL ALARM PORT**: :point_down:")
             st.table(df_al)
 
             # df_sdi = get_mmbb_sdi(string_data, node_name)
@@ -1249,31 +988,45 @@ def app():
             # st.table(df_sdi)
 
             df_asm = get_asm_df(string_data, node_name)
-            st.write('ASM')
+            # st.write('ASM')
+            st.write(
+                f"**ASM**: :point_down:")
             st.table(df_asm)
 
             df_invx_prod = get_inv_prod_df(string_data, node_name)
-            st.write('MMBB:INVX PROD LTE')
+            # st.write('MMBB:INVX PROD LTE')
+            st.write(
+                f"**MMBB:INVX PROD LTE**: :point_down:")
             st.table(df_invx_prod)
 
             df_attn = get_attn_df(string_data, node_name)
-            st.write('MMBB:ATTN')
+            # st.write('MMBB:ATTN')
+            st.write(
+                f"**MMBB:ATTN**: :point_down:")
             st.table(df_attn)
 
             df_ru = get_mmbb_ru_df(string_data, node_name)
-            st.write('MMBB:RU')
+            # st.write('MMBB:RU')
+            st.write(
+                f"**MMBB:RU**: :point_down:")
             st.table(df_ru)
 
             df_rsu = get_mmbb_rsu(string_data, node_name)
-            st.write('MMBB:RSU')
+            # st.write('MMBB:RSU')
+            st.write(
+                f"**MMBB:RSU**: :point_down:")
             st.table(df_rsu)
 
             df_post_cell = get_post_cell_df(string_data, node_name)
-            st.write('Post Cell State LTE')
+            # st.write('Post Cell State LTE')
+            st.write(
+                f"**Post Cell State LTE**: :point_down:")
             st.table(df_post_cell)
 
             df_post_cell_nr = get_post_cell_df_nr(string_data, node_name)
-            st.write('Post Cell State NR')
+            # st.write('Post Cell State NR')
+            st.write(
+                f"**Post Cell State NR**: :point_down:")
             st.table(df_post_cell_nr)
 
             st.markdown("""

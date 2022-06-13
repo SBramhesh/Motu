@@ -442,6 +442,14 @@ def amlepr_transducer(soup):
     return soup
 
 
+def lnhoif_transducer(soup):
+    ln_soup_list = lnhoif_xducer(st.session_state['LNHOIF'])
+    cmData_tag = soup.cmData
+    for c_soup in ln_soup_list:
+        cmData_tag.append(c_soup)
+    return soup
+
+
 def modpr_transducer(soup):
     processed_modpr = modpr_compose(st.session_state['MODPR'])
     cmData_tag = soup.cmData
@@ -503,6 +511,20 @@ def amlepr_xducer(aml_soup):
     return list(filter(lambda x: x != 'nan', aml_list))
 
 
+def lnhoif_xducer(lnh_soup):
+    lnh_dict = get_capr_value(
+        st.session_state['ciq_cell_par'])
+    lnh_band_dict = get_amlepr_band_value(
+        st.session_state['ciq_cell_par'])
+    lnh_list = []
+    for lcrid in lnh_dict.keys():
+        for index, earfcnDl in enumerate(lnh_band_dict.keys().remove(lnh_dict[lcrid])):
+            new_lnh_soup = process_lnhoif_soup(
+                lnh_soup, lcrid, earfcnDl, index, lnh_dict[lcrid], int(lnh_band_dict[earfcnDl]))
+            lnh_list.append(new_lnh_soup)
+    return list(filter(lambda x: x != 'nan', lnh_list))
+
+
 def return_greek_list(lcrid):
     alpha_list = [x[1] for x in st.session_state['band_cell_mapping']['alpha']]
     alpha_list = [int(i) for i in alpha_list]
@@ -539,6 +561,22 @@ def process_amlepr_soup(kapr_soup, lcrid, earfcnDl, index, fcnDl):
     return kapr_soup
 
 
+def process_lnhoif_soup(kapr_soup, lcrid, earfcnDl, index, fcnDl, dlChBw):
+    dist_string = kapr_soup.managedObject['distName']
+    dist_array = dist_string.split('/')
+    kapr_soup.managedObject['distName'] = '/'.join([
+        dist_array[0], dist_array[1], "LNCEL-" + lcrid, "LNHOIF-" + index])
+
+    tgt_tags = kapr_soup.find_all(attrs={"name": "eutraCarrierInfo"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = earfcnDl
+    dlch_tags = kapr_soup.find_all(attrs={"name": "measurementBandwidth"})
+    for dl_tag in dlch_tags:
+        dl_tag.string = st.session_state['lnh_dlch'][dlChBw]
+    kapr_soup = process_lnhoif_freq(kapr_soup, earfcnDl, fcnDl)
+    return kapr_soup
+
+
 def process_amlepr_cac(amlo_soup, earfcnDl, fcnDl):
     if is_first_net(earfcnDl):
         if is_low_band(fcnDl):
@@ -556,11 +594,109 @@ def process_amlepr_cac(amlo_soup, earfcnDl, fcnDl):
     return amlo_soup
 
 
+def process_lnhoif_freq(amlo_soup, earfcnDl, fcnDl):
+    if is_first_net(earfcnDl):
+        if is_low_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['FirstNet']['LB'])
+        elif is_high_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['FirstNet']['HB'])
+        elif is_medium_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['FirstNet']['MB'])
+    elif is_low_band(earfcnDl):
+        if is_low_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['LB']['LB'])
+        elif is_high_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['LB']['HB'])
+        elif is_medium_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['LB']['MB'])
+        else:
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['LB']['FirstNet'])
+    elif is_high_band(earfcnDl):
+        if is_low_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['HB']['LB'])
+        elif is_medium_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['HB']['MB'])
+        elif is_first_net(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['HB']['FirstNet'])
+    elif is_medium_band(earfcnDl):
+        if is_low_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['MB']['LB'])
+        elif is_high_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['MB']['HB'])
+        elif is_medium_band(fcnDl):
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['MB']['MB'])
+        else:
+            amlo_soup = set_lnh_freq_values(
+                st.session_state['lnhoif']['MB']['FirstNet'])
+
+    else:
+        amlo_soup = set_lnh_freq_values(st.session_state['lnhoif']['Default'])
+
+    return amlo_soup
+
+
 def set_cac_values(amll_soup, value_dict):
     amll_soup = set_cac_head(amll_soup, value_dict['cacHeadroom'])
     amll_soup = set_max_cac(amll_soup, value_dict['maxCacThreshold'])
     amll_soup = set_target_car(amll_soup, value_dict['targetCarrierFreq'])
     return amll_soup
+
+
+def set_lnh_freq_values(amll_soup, value_dict):
+    amll_soup = set_if(amll_soup, value_dict['threshold3InterFreq'])
+    amll_soup = set_ifq(amll_soup, value_dict['threshold3InterFreqQci1'])
+    amll_soup = set_aif(amll_soup, value_dict['threshold3aInterFreqQci1'])
+    amll_soup = set_aifq(amll_soup, value_dict['threshold3aInterFreqQci1'])
+    amll_soup = set_filt(amll_soup, value_dict['thresholdRsrpIFLBFilter'])
+    return amll_soup
+
+
+def set_if(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "threshold3InterFreq"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
+
+
+def set_ifq(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "threshold3InterFreqQci1"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
+
+
+def set_aif(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "threshold3aInterFreq"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
+
+
+def set_aifq(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "threshold3aInterFreqQci1"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
+
+
+def set_filt(kapr_soup, value):
+    tgt_tags = kapr_soup.find_all(attrs={"name": "thresholdRsrpIFLBFilter"})
+    for freq_tag in tgt_tags:
+        freq_tag.string = value
+    return kapr_soup
 
 
 def set_cac_head(kapr_soup, value):
@@ -778,7 +914,7 @@ def transducer_compose(soup):
         endEarfcnDl_replace_second_transducer, second_vlan_replace_transducer, first_vlan_replace_transducer, first_localIpAddr_replace_transducer,
         second_localIpAddr_replace_transducer, cPlaneIpAddr_replace_transducer, adjGnbId_replace_transducer, eutraCarrierFreq_b66_append_transducer,
         eutraCarrierFreq_b12_append_transducer, lcrid_transducer, psgrp_transducer, modpr_transducer, capr_transducer, carel_transducer,
-        mopr_transducer, amlepr_transducer)
+        mopr_transducer, amlepr_transducer, lnhoif_transducer)
     return transducer_function(soup)
 
 
@@ -1328,6 +1464,13 @@ def app():
                                       'Closed Loop MIMO (8x4)':	'4-layer',
                                       'Closed Loop MIMO (16x2)':	'2-layer'}
 
+    st.session_state['lnh_dlch'] = {
+        20: 'mbw100',
+        15: 'mbw75',
+        10: 'mbw50',
+        5:  'mbw25'
+    }
+
     st.session_state['amlepr'] = {'FirstNet': {
         'FirstNet': {
             'cacHeadroom': 100,
@@ -1352,6 +1495,136 @@ def app():
         'cacHeadroom': 40,
         'maxCacThreshold':  40,
         'deltaCac': 15
+    }
+    }
+    st.session_state['lnhoif'] = {'MB': {
+        'FirstNet': {
+            'threshold3InterFreq': 20,
+            'threshold3InterFreqQci1':  22,
+            'threshold3aInterFreq': 20,
+            'threshold3aInterFreqQci1': 22,
+            'thresholdRsrpIFLBFilter': -108
+
+        },
+        'LB': {
+            {
+                'threshold3InterFreq': 18,
+                'threshold3InterFreqQci1':  20,
+                'threshold3aInterFreq': 18,
+                'threshold3aInterFreqQci1': 20,
+                'thresholdRsrpIFLBFilter': -108
+            }
+        },
+        'MB': {
+            'threshold3InterFreq': 18,
+            'threshold3InterFreqQci1':  20,
+            'threshold3aInterFreq': 18,
+            'threshold3aInterFreqQci1': 20,
+            'thresholdRsrpIFLBFilter': -116
+        },
+        'HB': {
+            'threshold3InterFreq': 18,
+            'threshold3InterFreqQci1':  20,
+            'threshold3aInterFreq': 18,
+            'threshold3aInterFreqQci1': 20,
+            'thresholdRsrpIFLBFilter': -116
+        }
+
+    },
+        'HB': {
+        'FirstNet': {
+            'threshold3InterFreq': 20,
+            'threshold3InterFreqQci1':  22,
+            'threshold3aInterFreq': 20,
+            'threshold3aInterFreqQci1': 22,
+            'thresholdRsrpIFLBFilter': -108
+
+        },
+        'LB': {
+            {
+                'threshold3InterFreq': 22,
+                'threshold3InterFreqQci1':  22,
+                'threshold3aInterFreq': 22,
+                'threshold3aInterFreqQci1': 22,
+                'thresholdRsrpIFLBFilter': -108
+            }
+        },
+        'MB': {
+            'threshold3InterFreq': 18,
+            'threshold3InterFreqQci1':  20,
+            'threshold3aInterFreq': 18,
+            'threshold3aInterFreqQci1': 20,
+            'thresholdRsrpIFLBFilter': -116
+        }
+
+    },
+        'LB': {
+        'FirstNet': {
+            'threshold3InterFreq': 20,
+            'threshold3InterFreqQci1':  22,
+            'threshold3aInterFreq': 20,
+            'threshold3aInterFreqQci1': 22,
+            'thresholdRsrpIFLBFilter': -116
+
+        },
+        'LB': {
+            {
+                'threshold3InterFreq': 20,
+                'threshold3InterFreqQci1':  22,
+                'threshold3aInterFreq': 20,
+                'threshold3aInterFreqQci1': 22,
+                'thresholdRsrpIFLBFilter': -108
+            }
+        },
+        'MB': {
+            'threshold3InterFreq': 27,
+            'threshold3InterFreqQci1':  27,
+            'threshold3aInterFreq': 32,
+            'threshold3aInterFreqQci1': 32,
+            'thresholdRsrpIFLBFilter': -116
+        },
+        'HB': {
+            'threshold3InterFreq': 27,
+            'threshold3InterFreqQci1':  27,
+            'threshold3aInterFreq': 32,
+            'threshold3aInterFreqQci1': 32,
+            'thresholdRsrpIFLBFilter': -116
+        }
+
+    },
+        'FirstNet': {
+        'LB': {
+            {
+                'threshold3InterFreq': 22,
+                'threshold3InterFreqQci1':  22,
+                'threshold3aInterFreq': 22,
+                'threshold3aInterFreqQci1': 22,
+                'thresholdRsrpIFLBFilter': -116
+            }
+        },
+        'MB': {
+            'threshold3InterFreq': 22,
+            'threshold3InterFreqQci1':  22,
+            'threshold3aInterFreq': 22,
+            'threshold3aInterFreqQci1': 22,
+            'thresholdRsrpIFLBFilter': -116
+        },
+        'HB': {
+            'threshold3InterFreq': 19,
+            'threshold3InterFreqQci1':  19,
+            'threshold3aInterFreq': 97,
+            'threshold3aInterFreqQci1': 97,
+            'thresholdRsrpIFLBFilter': -116
+        }
+
+    },
+        'Default': {
+        'threshold3InterFreq': 19,
+        'threshold3InterFreqQci1':  19,
+        'threshold3aInterFreq': 97,
+        'threshold3aInterFreqQci1': 97,
+        'thresholdRsrpIFLBFilter': -108
+
     }
     }
 
@@ -1381,6 +1654,10 @@ def app():
     st.session_state['CAPR'] = BeautifulSoup(
         xml_templates.return_xml('CAPR'), "xml")
     st.session_state['CAREL'] = BeautifulSoup(
+        xml_templates.return_xml('CAREL'), "xml")
+    st.session_state['AMLEPR'] = BeautifulSoup(
+        xml_templates.return_xml('CAREL'), "xml")
+    st.session_state['LNHOIF'] = BeautifulSoup(
         xml_templates.return_xml('CAREL'), "xml")
     st.session_state['root_xml'] = BeautifulSoup(
         xml_templates.return_xml(), "xml")

@@ -1,1 +1,1 @@
-web sh setup.sh && streamlit run nokia.py
+web sh setup.sh && streamlit run ./logger/parse_logs.py
